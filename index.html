@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeMind - اپلیکیشن جامع </title>
+    <title>SafeMind - اپلیکیشن جامع (Groq - Frontend API)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -304,7 +304,7 @@
                 messages: [
                     { 
                         role: "system", 
-                        content: "شما یک دستیار هوش مصنوعی مفید و سازنده هستید که فقط و فقط به زبان فارسی روان و معیار پاسخ می‌دهد. لطفاً از کلمات انگلیسی استفاده نکنید، مگر اینکه خود کلمه (مثلاً یک نام خاص) اصالتاً انگلیسی باشد و معادل فارسی رایجی نداشته باشد. در تمام موارد دیگر، پاسخ باید ۱۰۰٪ فارسی باشد. پاسخ‌های شما باید مستقیماً به پرسش کاربر باشد و بدون اضافه کردن جملات مقدماتی یا پایانی غیرضروری باشد."
+                        content: "شما یک دستیار هوش مصنوعی بسیار دقیق، متعهد و **منحصراً فارسی‌زبان** هستید. **فقط و فقط به زبان فارسی روان و معیار پاسخ دهید.** به هیچ عنوان از کلمات، عبارات، جملات، ساختارها، حروف یا اعداد انگلیسی، چینی، روسی، یا هر زبان دیگری استفاده نکنید. **شما هیچ زبان دیگری به جز فارسی را نمی‌شناسید و قادر به درک یا تولید آن نیستید.** تمام پاسخ‌ها باید ۱۰۰٪ فارسی خالص باشند. اگر در پرسش کاربر کلمات غیرفارسی (به جز نام‌های خاص فارسی‌سازی‌شده) وجود داشت، آن‌ها را نادیده بگیرید یا به فارسی توضیح دهید. پاسخ‌های شما باید مستقیماً و بدون هیچ مقدمه یا مؤخره اضافی به اصل پرسش بپردازند. حتی اعداد را به صورت حروف فارسی بنویسید (مثلاً یک، دو، سه). اگر کاربر به زبانی غیر از فارسی صحبت کرد، مودبانه به فارسی بگویید که فقط فارسی متوجه می‌شوید و می‌توانید به فارسی پاسخ دهید. **قبل از تولید پاسخ نهایی، متن را به صورت داخلی یک بار به فارسی ترجمه و پالایش کنید تا از عدم وجود هرگونه کلمه یا عبارت غیرفارسی و بی‌ربط اطمینان حاصل شود. سپس پاسخ کاملاً فارسی و مرتبط را ارائه دهید. اگر پس از ترجمه و پالایش، متن همچنان شامل کلمات یا عباراتی بود که به نظر می‌رسد غیرفارسی یا نامربوط هستند، آن بخش‌ها را حذف کرده و فقط بخش‌های فارسی و مرتبط را حفظ کنید.** در صورتی که به هر دلیلی نتوانستید پاسخی کاملاً فارسی ارائه دهید، به جای تولید متن غیرفارسی، فقط یک پیام کوتاه فارسی با مضمون 'خطا در تولید پاسخ فارسی. لطفاً دوباره تلاش کنید.' برگردانید."
                     },
                     { 
                         role: "user", 
@@ -343,7 +343,9 @@
 
                 if (result.choices && result.choices.length > 0 &&
                     result.choices[0].message && result.choices[0].message.content) {
-                    return result.choices[0].message.content.trim();
+                    let generatedText = result.choices[0].message.content.trim();
+                    generatedText = generatedText.replace(/[^ \u0600-\u06FF\u0750-\u077F\uFB50-\uFDCF\uFDF0-\uFDFF\uFE70-\uFEFF\u0030-\u0039\u0020-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u200C\n\r]/g, '');
+                    return generatedText;
                 } else {
                     console.error("Groq API Error: Invalid response structure", result);
                     throw new Error(result.error || 'پاسخ نامعتبر از Groq API دریافت شد.');
@@ -495,12 +497,12 @@
             const [dailyRecords, setDailyRecords] = useState([]);
             const [isTodayCheckedIn, setIsTodayCheckedIn] = useState(false);
             const [dailyUniqueEffects, setDailyUniqueEffects] = useState([]);
+            const [isGeneratingEffects, setIsGeneratingEffects] = useState(false);
 
             useEffect(() => {
                 const storedCleanDays = localStorage.getItem('safemind_clean_days');
                 const storedLastCheckInDate = localStorage.getItem('safemind_last_check_in_date');
                 const storedDailyRecords = localStorage.getItem('safemind_daily_records');
-                const storedEffects = localStorage.getItem('safemind_effects');
                 const storedDailyEffectsDate = localStorage.getItem('safemind_daily_effects_date');
                 const storedDailyEffectsList = localStorage.getItem('safemind_daily_effects_list');
 
@@ -517,25 +519,10 @@
                 }
 
                 const today = new Date();
-                let effectsList = storedEffects ? JSON.parse(storedEffects) : [
-                    "افزایش انرژی و شادابی", "بهبود تمرکز و حافظه", "خواب بهتر و عمیق‌تر",
-                    "کاهش استرس و اضطراب", "افزایش اعتماد به نفس", "بهبود روابط اجتماعی",
-                    "پوست و موی سالم‌تر", "بهبود حس بویایی و چشایی", "افزایش بهره‌وری",
-                    "کاهش خطر بیماری‌ها", "زندگی شادتر", "آرامش درونی"
-                ];
-
                 if (isSameDay(new Date(storedDailyEffectsDate), today) && storedDailyEffectsList) {
                     setDailyUniqueEffects(JSON.parse(storedDailyEffectsList));
                 } else {
-                    if (effectsList.length >= 3) {
-                        const shuffled = [...effectsList].sort(() => 0.5 - Math.random());
-                        const selectedEffects = shuffled.slice(0, 3);
-                        setDailyUniqueEffects(selectedEffects);
-                        localStorage.setItem('safemind_daily_effects_date', today.toISOString());
-                        localStorage.setItem('safemind_daily_effects_list', JSON.stringify(selectedEffects));
-                    } else {
-                        setDailyUniqueEffects(effectsList); 
-                    }
+                    generateDailyEffects(); 
                 }
             }, []);
 
@@ -544,6 +531,25 @@
                 localStorage.setItem('safemind_last_check_in_date', lastCheckInDate ? lastCheckInDate.toISOString() : '');
                 localStorage.setItem('safemind_daily_records', JSON.stringify(dailyRecords.map(date => date.toISOString())));
             }, [cleanDays, lastCheckInDate, dailyRecords]);
+
+            const generateDailyEffects = async () => {
+                setIsGeneratingEffects(true);
+                setDailyUniqueEffects([]); 
+                try {
+                    const prompt = "سه اثر مثبت و ملموس از ترک یک عادت بد (مانند سیگار، اعتیاد به اینترنت، پرخوری) را به صورت یک لیست شماره‌دار و فقط به زبان فارسی بنویسید. هر اثر باید در یک خط جداگانه باشد. مثال: 1. افزایش انرژی. 2. بهبود خواب. 3. تمرکز بیشتر.";
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    const effectsArray = generatedText.split('\n').filter(line => line.trim() !== '').map(line => line.replace(/^\d+\.\s*/, '').trim());
+                    setDailyUniqueEffects(effectsArray);
+                    localStorage.setItem('safemind_daily_effects_date', new Date().toISOString());
+                    localStorage.setItem('safemind_daily_effects_list', JSON.stringify(effectsArray));
+                    showSnackbar('اثرات مثبت روزانه به‌روزرسانی شد!');
+                } catch (error) {
+                    console.error("Error generating daily effects:", error);
+                    showSnackbar(error.message || 'خطا در دریافت اثرات مثبت روزانه.');
+                } finally {
+                    setIsGeneratingEffects(false);
+                }
+            };
 
             const handleCheckIn = () => {
                 const today = new Date();
@@ -563,6 +569,9 @@
             const todayFormatted = formatDate(new Date());
             const progressPercentage = Math.min((cleanDays / 90) * 100, 100);
 
+            const radius = 44;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (progressPercentage / 100) * circumference;
 
             return (
                 <div className="text-center p-4 sm:p-6 flex flex-col items-center">
@@ -579,29 +588,48 @@
                         امروز: {todayFormatted}
                     </p>
 
-                    <div className="clean-days-box p-6 sm:p-8 rounded-2xl border-2 mb-8 sm:mb-10 inline-block w-full max-w-xs sm:max-w-sm transform transition-transform duration-300 hover:scale-105 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-700 dark:to-gray-800 opacity-20 rounded-2xl"></div>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 relative z-10">
-                            روزهای پاک:
-                        </h2>
-                        <p className="text-7xl sm:text-8xl font-extrabold text-blue-800 dark:text-blue-200 mt-3 sm:mt-4 leading-none relative z-10">
-                            {cleanDays}
-                        </p>
-                        <p className="text-xl sm:text-2xl font-semibold text-blue-600 dark:text-blue-400 mt-1 sm:mt-2 relative z-10">
-                            از ۹۰ روز
-                        </p>
+                    <div className="clean-days-box relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-2 flex flex-col items-center justify-center mx-auto mb-8 sm:mb-10 transform transition-transform duration-300 hover:scale-105 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-700 dark:to-gray-800 opacity-20 rounded-full"></div>
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                            <circle
+                                className="text-gray-200 dark:text-gray-700"
+                                strokeWidth="8"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="44"
+                                cx="50"
+                                cy="50"
+                            />
+                            <circle
+                                className="text-blue-500"
+                                strokeWidth="8"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={strokeDashoffset}
+                                strokeLinecap="round"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="44"
+                                cx="50"
+                                cy="50"
+                                style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                                transform="rotate(-90 50 50)"
+                            />
+                        </svg>
+                        <div className="relative z-10 text-center">
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-blue-700 dark:text-blue-300">
+                                روزهای پاک:
+                            </h2>
+                            <p className="text-5xl sm:text-6xl font-extrabold text-blue-800 dark:text-blue-200 mt-1 sm:mt-2 leading-none">
+                                {cleanDays}
+                            </p>
+                            <p className="text-xl sm:text-2xl font-semibold text-blue-600 dark:text-blue-400 mt-1">
+                                از ۹۰ روز
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-blue-700 dark:text-blue-300 mt-2">
+                                {progressPercentage.toFixed(0)}%
+                            </p>
+                        </div>
                     </div>
-
-                    <div className="w-full max-w-xs sm:max-w-sm bg-gray-200 dark:bg-gray-700 rounded-full h-3 sm:h-4 mb-6 sm:mb-8 relative">
-                        <div
-                            className="bg-blue-500 h-3 sm:h-4 rounded-full transition-all duration-500 ease-out"
-                            style={{ width: `${progressPercentage}%` }}
-                        ></div>
-                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-white dark:text-gray-200" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>
-                            {progressPercentage.toFixed(0)}%
-                        </span>
-                    </div>
-
 
                     <button
                         onClick={handleCheckIn}
@@ -623,19 +651,27 @@
                         )}
                     </button>
 
-                    {dailyUniqueEffects.length > 0 && (
-                        <div className="mt-8 sm:mt-10 p-4 sm:p-6 bg-blue-50 dark:bg-gray-800 rounded-xl shadow-md w-full max-w-md mx-auto border border-blue-200 dark:border-gray-700">
-                            <h3 className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-300 mb-3 sm:mb-4">اثرات مثبت امروز:</h3>
-                            <ul className="space-y-2 sm:space-y-3 text-right">
-                                {dailyUniqueEffects.map((effect, index) => (
-                                    <li key={index} className="flex items-center text-gray-800 dark:text-gray-200 text-sm sm:text-lg">
-                                        <i className="fas fa-check-circle text-green-500 ml-2 sm:ml-3"></i>
-                                        {effect}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    <div className="mt-8 sm:mt-10 p-4 sm:p-6 bg-blue-50 dark:bg-gray-800 rounded-xl shadow-md w-full max-w-md mx-auto border border-blue-200 dark:border-gray-700">
+                        <h3 className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-300 mb-3 sm:mb-4">اثرات مثبت امروز:</h3>
+                        {isGeneratingEffects ? (
+                            <p className="text-gray-800 dark:text-gray-200 text-sm sm:text-lg flex items-center justify-center">
+                                <i className="fas fa-spinner fa-spin ml-2"></i> در حال دریافت اثرات...
+                            </p>
+                        ) : (
+                            dailyUniqueEffects.length > 0 ? (
+                                <ul className="space-y-2 sm:space-y-3 text-right">
+                                    {dailyUniqueEffects.map((effect, index) => (
+                                        <li key={index} className="flex items-center text-gray-800 dark:text-gray-200 text-sm sm:text-lg">
+                                            <i className="fas fa-check-circle text-green-500 ml-2 sm:ml-3"></i>
+                                            {effect}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">اثرات مثبت روزانه در دسترس نیست.</p>
+                            )
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -724,8 +760,7 @@
                     <button
                         onClick={generateNewMessage}
                         disabled={isGeneratingMessage}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
-                    >
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
                         {isGeneratingMessage ? (
                             <i className="fas fa-spinner fa-spin ml-2"></i>
                         ) : (
@@ -746,8 +781,7 @@
                         />
                         <button
                             onClick={handleAddMessage}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base"
-                        >
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base">
                             <i className="fas fa-plus ml-1 sm:ml-2"></i>
                             افزودن
                         </button>
@@ -775,9 +809,7 @@
             const [effects, setEffects] = useState(() => {
                 const storedEffects = localStorage.getItem('safemind_effects');
                 return storedEffects ? JSON.parse(storedEffects) : [
-                    "افزایش انرژی و شادابی",
-                    "بهبود تمرکز و حافظه",
-                    "خواب بهتر و عمیق‌تر",
+                    "افزایش انرژی و شادابی", "بهبود تمرکز و حافظه", "خواب بهتر و عمیق‌تر",
                 ];
             });
             const [newEffect, setNewEffect] = useState('');
@@ -788,7 +820,7 @@
 
             useEffect(() => {
                 localStorage.setItem('safemind_effects', JSON.stringify(effects));
-                displayDailyEffect();
+                displayDailyEffect(); 
             }, [effects]);
 
             useEffect(() => {
@@ -796,8 +828,8 @@
                 if (storedLastEffectDate) {
                     setLastEffectDate(new Date(storedLastEffectDate));
                 }
-                displayDailyEffect();
-            }, []);
+                displayDailyEffect(); 
+            }, []); 
 
             const displayDailyEffect = () => {
                 const today = new Date();
@@ -865,13 +897,8 @@
                     <button
                         onClick={expandEffectExplanation}
                         disabled={isExpandingEffect || !dailyEffect || dailyEffect === 'اثری برای نمایش وجود ندارد. یکی اضافه کنید!'}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
-                    >
-                        {isExpandingEffect ? (
-                            <i className="fas fa-spinner fa-spin ml-2"></i>
-                        ) : (
-                            <i className="fas fa-lightbulb ml-2"></i>
-                        )}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isExpandingEffect ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-lightbulb ml-2"></i>}
                         توضیح اثر مثبت ✨
                     </button>
 
@@ -887,8 +914,7 @@
                         />
                         <button
                             onClick={handleAddEffect}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base"
-                        >
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base">
                             <i className="fas fa-plus ml-1 sm:ml-2"></i>
                             افزودن
                         </button>
@@ -933,20 +959,20 @@
             const handleDeleteReason = (indexToDelete) => setReasons(reasons.filter((_, index) => index !== indexToDelete));
 
             const generateNewReason = async () => {
-                setIsGeneratingReason(true);
-                setGeneratedReason('در حال تولید دلیل جدید...');
-                try {
-                    const prompt = "یک دلیل قوی و انگیزشی برای ترک یک عادت بد بنویسید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
-                    const newGeneratedReasonText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
-                    setGeneratedReason(newGeneratedReasonText);
-                    showSnackbar('دلیل جدید با موفقیت تولید شد!');
-                } catch (error) {
-                    showSnackbar(error.message || 'خطا در تولید دلیل.');
-                    setGeneratedReason('خطا در تولید دلیل. دوباره تلاش کنید.');
-                } finally {
-                    setIsGeneratingReason(false);
-                }
-            };
+                    setIsGeneratingReason(true);
+                    setGeneratedReason('در حال تولید دلیل جدید...');
+                    try {
+                        const prompt = "یک دلیل قوی و انگیزشی برای ترک یک عادت بد بنویسید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
+                        const newGeneratedReasonText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
+                        setGeneratedReason(newGeneratedReasonText);
+                        showSnackbar('دلیل جدید با موفقیت تولید شد!');
+                    } catch (error) {
+                        showSnackbar(error.message || 'خطا در تولید دلیل.');
+                        setGeneratedReason('خطا در تولید دلیل. دوباره تلاش کنید.');
+                    } finally {
+                        setIsGeneratingReason(false);
+                    }
+                };
              return (
                 <div className="text-center p-2">
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">دیوار دلایل ترک</h2>
@@ -958,8 +984,7 @@
                     <button
                         onClick={generateNewReason}
                         disabled={isGeneratingReason}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
-                    >
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
                         {isGeneratingReason ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-lightbulb ml-2"></i>}
                         تولید دلیل جدید ✨
                     </button>
@@ -1117,14 +1142,14 @@
                     </button>
                     {progressReport && (
                         <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left">
-                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">گزارش پیشرفت شما:</h3>
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">نتیجه تحلیل:</h3>
                             <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm sm:text-base">{progressReport}</p>
                         </div>
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 mt-6 sm:mt-8">تاریخچه‌ی روزانه‌ی پاکی</h3>
                     <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
                         {dailyRecords.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز روزی ثبت نشده است.</li>}
-                        {[...dailyRecords].reverse().map((record, index) => (
+                        {dailyRecords.map((record, index) => (
                             <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
                                 <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{formatDate(record)} - روز پاک</span>
                             </li>
@@ -1145,14 +1170,17 @@
                 localStorage.setItem('notification_motivational_message_time', motivationalMessageTime);
                 localStorage.setItem('notification_daily_check_in_enabled', isDailyCheckInEnabled.toString());
                 localStorage.setItem('notification_motivational_message_enabled', isMotivationalMessageEnabled.toString());
-                if ((isDailyCheckInEnabled || isMotivationalMessageEnabled) && typeof Notification !== 'undefined' && Notification.permission === "default") {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === "granted") {
-                            showSnackbar("نوتیفیکیشن‌ها فعال شدند.");
-                        } else {
-                            showSnackbar("اجازه نوتیفیکیشن داده نشد.");
-                        }
-                    });
+                
+                if (isDailyCheckInEnabled || isMotivationalMessageEnabled) {
+                    if ("Notification" in window && Notification.permission === "default") {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                showSnackbar("نوتیفیکیشن‌ها فعال شدند.");
+                            } else {
+                                showSnackbar("اجازه نوتیفیکیشن داده نشد.");
+                            }
+                        });
+                    }
                 }
             }, [dailyCheckInTime, motivationalMessageTime, isDailyCheckInEnabled, isMotivationalMessageEnabled, showSnackbar]);
 
@@ -1228,7 +1256,7 @@
             );
         }
 
-        function EmergencyLockScreen({ showSnackbar, setLockedState, emergencyLockRefFromApp }) {
+        function EmergencyLockScreen({ showSnackbar, setLockedState, emergencyLockRefFromApp, setCurrentView }) {
             const [lockTimer, setLockTimer] = useState(0);
             const [deterrentMessage, setDeterrentMessage] = useState('');
             const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
@@ -1243,6 +1271,7 @@
                                 setLockedState(false);
                                 setDeterrentMessage('');
                                 showSnackbar('قفل اضطراری به پایان رسید.');
+                                setCurrentView('home'); 
                                 return 0;
                             }
                             return prevTime - 1;
@@ -1252,7 +1281,7 @@
                     clearInterval(timerIntervalRef.current);
                 }
                 return () => clearInterval(timerIntervalRef.current);
-            }, [lockTimer, setLockedState, showSnackbar]);
+            }, [lockTimer, setLockedState, showSnackbar, setCurrentView]);
 
             const startLock = async (durationSeconds = 300) => {
                 setLockTimer(durationSeconds);
@@ -1278,34 +1307,40 @@
                 setIsGeneratingMessage(false);
                 setLockedState(false);
                 showSnackbar('قفل اضطراری لغو شد.');
+                setCurrentView('home'); 
             };
             React.useImperativeHandle(emergencyLockRefFromApp, () => ({ lockTimer, deterrentMessage, isGeneratingMessage, cancelLock, startLock }));
 
             return (
-                <div className="text-center p-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-6 sm:mb-8">قفل اضطراری</h2>
-                    {lockTimer === 0 ? (
-                        <button onClick={() => startLock()} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center mx-auto text-lg sm:text-2xl">
-                            <i className="fas fa-lock ml-2"></i> فعال‌سازی قفل اضطراری
-                        </button>
-                    ) : (
-                        <div className="flex flex-col items-center">
-                            <p className="text-5xl sm:text-6xl font-extrabold text-red-600 dark:text-red-400 mb-4 sm:mb-6">{formatTime(lockTimer)}</p>
+                <div className="lock-overlay">
+                    <div className="flex flex-col items-center justify-center h-full w-full p-2">
+                        <h2 className="text-3xl sm:text-5xl font-extrabold text-red-500 mb-6 sm:mb-8">
+                            <i className="fas fa-exclamation-triangle mr-2 sm:mr-4"></i>
+                            قفل اضطراری فعال است!
+                        </h2>
+                        <p className="text-6xl sm:text-8xl font-bold text-white mb-6 sm:mb-8">
+                            {formatTime(lockTimer)}
+                        </p>
+                        
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-6 sm:mb-8 min-h-[120px] sm:min-h-[150px] w-full max-w-sm sm:max-w-lg">
                             {isGeneratingMessage ? (
-                                <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 flex items-center">
+                                <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-center">
                                     <i className="fas fa-spinner fa-spin ml-2"></i> در حال دریافت پیام بازدارنده...
                                 </p>
                             ) : (
-                                <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-6 sm:mb-8 min-h-[120px] sm:min-h-[150px]">
-                                    <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">"{deterrentMessage}"</p>
-                                </div>
+                                <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">"{deterrentMessage}"</p>
                             )}
-                            <button onClick={cancelLock} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 sm:px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center mx-auto mt-3 sm:mt-4 text-sm sm:text-base">
-                                <i className="fas fa-times-circle ml-2"></i> لغو قفل
-                            </button>
                         </div>
-                    )}
-                    <p className="text-gray-600 dark:text-gray-400 mt-6 sm:mt-8 text-xs sm:text-sm">این قفل برای لحظات شدید وسوسه طراحی شده است.</p>
+                        
+                        <button
+                            onClick={() => cancelLock()}
+                            className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 text-base sm:text-lg"
+                        >
+                            <i className="fas fa-unlock ml-2"></i>
+                            لغو قفل
+                        </button>
+                        <p className="text-gray-600 dark:text-gray-400 mt-6 sm:mt-8 text-xs sm:text-sm">این قفل برای لحظات شدید وسوسه طراحی شده است.</p>
+                    </div>
                 </div>
             );
         }
@@ -1389,46 +1424,47 @@
             );
         }
 
-        function DailyAffirmationScreen({ showSnackbar, userName }) {
-            const [affirmation, setAffirmation] = useState('');
-            const [isGeneratingAffirmation, setIsGeneratingAffirmation] = useState(false);
-            const [cleanDaysForAffirmation, setCleanDaysForAffirmation] = useState(0);
+        // DailyAffirmationScreen component is commented out as requested.
+        // function DailyAffirmationScreen({ showSnackbar, userName }) {
+        //     const [affirmation, setAffirmation] = useState('');
+        //     const [isGeneratingAffirmation, setIsGeneratingAffirmation] = useState(false);
+        //     const [cleanDaysForAffirmation, setCleanDaysForAffirmation] = useState(0);
 
-             useEffect(() => {
-                const storedCleanDays = localStorage.getItem('safemind_clean_days');
-                if (storedCleanDays) setCleanDaysForAffirmation(parseInt(storedCleanDays, 10));
-            }, []);
+        //      useEffect(() => {
+        //         const storedCleanDays = localStorage.getItem('safemind_clean_days');
+        //         if (storedCleanDays) setCleanDaysForAffirmation(parseInt(storedCleanDays, 10));
+        //     }, []);
 
-            const generateAffirmation = async () => {
-                setIsGeneratingAffirmation(true);
-                setAffirmation('در حال تولید تأییدیه...');
-                try {
-                    const prompt = `یک تأییدیه (affirmation) مثبت و شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForAffirmation} روز است که یک عادت بد را ترک کرده، بنویسید. تأییدیه باید کوتاه، قدرتمند و الهام‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
-                    setAffirmation(generatedText);
-                    showSnackbar('تأییدیه با موفقیت تولید شد!');
-                } catch (error) {
-                    showSnackbar(error.message || 'خطا در تولید تأییدیه.');
-                    setAffirmation('خطا در تولید تأییدیه. دوباره تلاش کنید.');
-                } finally {
-                    setIsGeneratingAffirmation(false);
-                }
-            };
-            return (
-                <div className="text-center p-2">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">تأیید روزانه</h2>
-                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
-                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
-                            "{affirmation || "برای دریافت تأییدیه روزانه خود، دکمه زیر را فشار دهید."}"
-                        </p>
-                    </div>
-                    <button onClick={generateAffirmation} disabled={isGeneratingAffirmation} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
-                        {isGeneratingAffirmation ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-heart ml-2"></i>}
-                        دریافت تأییدیه روزانه ✨
-                    </button>
-                </div>
-            );
-        }
+        //     const generateAffirmation = async () => {
+        //         setIsGeneratingAffirmation(true);
+        //         setAffirmation('در حال تولید تأییدیه...');
+        //         try {
+        //             const prompt = `یک تأییدیه (affirmation) مثبت و شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForAffirmation} روز است که یک عادت بد را ترک کرده، بنویسید. تأییدیه باید کوتاه، قدرتمند و الهام‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+        //             const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+        //             setAffirmation(generatedText);
+        //             showSnackbar('تأییدیه با موفقیت تولید شد!');
+        //         } catch (error) {
+        //             showSnackbar(error.message || 'خطا در تولید تأییدیه.');
+        //             setAffirmation('خطا در تولید تأییدیه. دوباره تلاش کنید.');
+        //         } finally {
+        //             setIsGeneratingAffirmation(false);
+        //         }
+        //     };
+        //     return (
+        //         <div className="text-center p-2">
+        //             <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">تأیید روزانه</h2>
+        //             <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
+        //                 <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+        //                     "{affirmation || "برای دریافت تأییدیه روزانه خود، دکمه زیر را فشار دهید."}"
+        //                 </p>
+        //             </div>
+        //             <button onClick={generateAffirmation} disabled={isGeneratingAffirmation} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+        //                 {isGeneratingAffirmation ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-heart ml-2"></i>}
+        //                 دریافت تأییدیه روزانه ✨
+        //             </button>
+        //         </div>
+        //     );
+        // }
 
         function GoalSettingScreen({ showSnackbar }) {
             const [goalInput, setGoalInput] = useState('');
@@ -1558,7 +1594,7 @@
                     case 'challenges':
                         return <ChallengesScreen showSnackbar={showAppSnackbar} />;
                     case 'emergency':
-                        return <EmergencyLockScreen emergencyLockRefFromApp={emergencyLockRef} showSnackbar={showAppSnackbar} setLockedState={setIsLocked} />;
+                        return <EmergencyLockScreen emergencyLockRefFromApp={emergencyLockRef} showSnackbar={showAppSnackbar} setLockedState={setIsLocked} setCurrentView={setCurrentView} />;
                     case 'recommendations':
                         return <RecommendationsScreen showSnackbar={showAppSnackbar} />;
                     case 'rewards':
@@ -1608,18 +1644,20 @@
                                     بستن
                                 </button>
                                 <button className={`sidebar-button ${currentView === 'home' ? 'active' : ''}`} onClick={() => handleMenuItemClick('home')}> <i className="fas fa-home"></i> <span>خانه</span> </button>
-                                <button className={`sidebar-button ${currentView === 'profile' ? 'active' : ''}`} onClick={() => handleMenuItemClick('profile')}> <i className="fas fa-user-circle"></i> <span>پروفایل و تاریخچه</span> </button>
-                                <button className={`sidebar-button ${currentView === 'messages' ? 'active' : ''}`} onClick={() => handleMenuItemClick('messages')}> <i className="fas fa-quote-right"></i> <span>پیام‌ها</span> </button>
                                 <button className={`sidebar-button ${currentView === 'effects' ? 'active' : ''}`} onClick={() => handleMenuItemClick('effects')}> <i className="fas fa-spa"></i> <span>اثرات مثبت</span> </button>
-                                <button className={`sidebar-button ${currentView === 'reasons' ? 'active' : ''}`} onClick={() => handleMenuItemClick('reasons')}> <i className="fas fa-lightbulb"></i> <span>دلایل</span> </button>
-                                <button className={`sidebar-button ${currentView === 'temptations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('temptations')}> <i className="fas fa-chart-line"></i> <span>وسوسه‌ها</span> </button>
-                                <button className={`sidebar-button ${currentView === 'rewards' ? 'active' : ''}`} onClick={() => handleMenuItemClick('rewards')}> <i className="fas fa-trophy"></i> <span>پاداش‌ها</span> </button>
-                                <button className={`sidebar-button ${currentView === 'affirmation' ? 'active' : ''}`} onClick={() => handleMenuItemClick('affirmation')}> <i className="fas fa-heart"></i> <span>تأییدیه</span> </button>
-                                <button className={`sidebar-button ${currentView === 'goalplanning' ? 'active' : ''}`} onClick={() => handleMenuItemClick('goalplanning')}> <i className="fas fa-clipboard-list"></i> <span>برنامه‌ریزی هدف</span> </button>
-                                <button className={`sidebar-button ${currentView === 'challenges' ? 'active' : ''}`} onClick={() => handleMenuItemClick('challenges')}> <i className="fas fa-dumbbell"></i> <span>چالش‌ها</span> </button>
                                 <button className={`sidebar-button ${currentView === 'recommendations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('recommendations')}> <i className="fas fa-star"></i> <span>توصیه‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'reasons' ? 'active' : ''}`} onClick={() => handleMenuItemClick('reasons')}> <i className="fas fa-lightbulb"></i> <span>دلایل</span> </button>
+                                <button className={`sidebar-button ${currentView === 'messages' ? 'active' : ''}`} onClick={() => handleMenuItemClick('messages')}> <i className="fas fa-quote-right"></i> <span>پیام‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'temptations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('temptations')}> <i className="fas fa-chart-line"></i> <span>وسوسه‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'profile' ? 'active' : ''}`} onClick={() => handleMenuItemClick('profile')}> <i className="fas fa-user-circle"></i> <span>پروفایل و تاریخچه</span> </button>
+                                <button className={`sidebar-button ${currentView === 'rewards' ? 'active' : ''}`} onClick={() => handleMenuItemClick('rewards')}> <i className="fas fa-trophy"></i> <span>پاداش‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'challenges' ? 'active' : ''}`} onClick={() => handleMenuItemClick('challenges')}> <i className="fas fa-dumbbell"></i> <span>چالش‌ها</span> </button>
                                 <button className={`sidebar-button ${currentView === 'emergency' ? 'active' : ''}`} onClick={() => handleMenuItemClick('emergency')}> <i className="fas fa-lock"></i> <span>قفل اضطراری</span> </button>
+                                <button className={`sidebar-button ${currentView === 'notifications' ? 'active' : ''}`} onClick={() => handleMenuItemClick('notifications')}> <i className="fas fa-bell"></i> <span>نوتیفیکیشن‌ها</span> </button>
                                 <button className="sidebar-button" onClick={() => { setIsSidebarOpen(false); setShowRelapseConfirmModal(true); }}> <i className="fas fa-redo-alt"></i> <span>بازنشانی روزهای پاک</span> </button>
+                                <div className="mt-auto p-4 text-center text-gray-500 dark:text-gray-400 text-xs">
+                                    نسخه 1.1 Powerd By Best Mind
+                                </div>
                             </div>
 
                             <div className="content-area">
@@ -1628,7 +1666,7 @@
 
                             <Snackbar message={snackbarMessage} show={showSnackbar} />
 
-                            {isLocked && emergencyLockRef.current && (
+                            {isLocked && (
                                 <div className="lock-overlay">
                                     <h2 className="text-3xl sm:text-5xl font-extrabold text-red-500 mb-6 sm:mb-8">
                                         <i className="fas fa-exclamation-triangle mr-2 sm:mr-4"></i>
@@ -1637,16 +1675,17 @@
                                     <p className="text-6xl sm:text-8xl font-bold text-white mb-6 sm:mb-8">
                                         {formatTime(emergencyLockRef.current.lockTimer)}
                                     </p>
-                                    <div className="w-full max-w-sm sm:max-w-lg card bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg mb-6 sm:mb-8">
-                                        <p className="text-lg sm:text-2xl font-semibold text-white leading-relaxed">
-                                            "{emergencyLockRef.current.deterrentMessage || 'لطفاً مقاومت کنید. این لحظه می‌گذرد!'}"
-                                        </p>
-                                        {emergencyLockRef.current.isGeneratingMessage && (
-                                            <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-300">
+                                    
+                                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-6 sm:mb-8 min-h-[120px] sm:min-h-[150px] w-full max-w-sm sm:max-w-lg">
+                                        {emergencyLockRef.current.isGeneratingMessage ? (
+                                            <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-center">
                                                 <i className="fas fa-spinner fa-spin ml-2"></i> در حال دریافت پیام بازدارنده...
                                             </p>
+                                        ) : (
+                                            <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">"{emergencyLockRef.current.deterrentMessage || 'لطفاً مقاومت کنید. این لحظه می‌گذرد!'}"</p>
                                         )}
                                     </div>
+                                    
                                     <button
                                         onClick={() => emergencyLockRef.current.cancelLock()}
                                         className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 text-base sm:text-lg"
