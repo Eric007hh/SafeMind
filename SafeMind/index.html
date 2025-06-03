@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeMind - اپلیکیشن جامع (Groq)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;800&display=swap');
+
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f0f2f5; 
+            color: #1f2937; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+            min-height: 100vh;
+            padding: 20px 0; 
+            box-sizing: border-box;
+        }
+
+        body.dark {
+            background-color: #111827; 
+            color: #d1d5db; 
+        }
+
+        .app-container {
+            max-width: 600px; 
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 40px); 
+            max-height: calc(100vh - 40px); 
+        }
+
+        body.dark .app-container {
+            background-color: #1f2937; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-bar {
+            background-color: #2563eb; 
+            color: white;
+            padding: 1rem; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; 
+        }
+
+        body.dark .app-bar {
+            background-color: #374151; 
+        }
+
+        .content-area {
+            flex-grow: 1;
+            padding: 1.5rem; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        .clean-days-box {
+            background-color: #eff6ff; 
+            border: 2px solid #3b82f6; 
+        }
+
+        body.dark .clean-days-box {
+            background-color: #374151; 
+            border: 2px solid #60a5fa; 
+        }
+
+        .check-in-button {
+            background-color: #2563eb;
+        }
+
+        .check-in-button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .check-in-button:disabled {
+            background-color: #a7f3d0; 
+            cursor: not-allowed;
+            color: #065f46; 
+        }
+
+        .card {
+            background-color: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+        }
+
+        body.dark .card {
+            background-color: #374151; 
+            border: 1px solid #4b5563; 
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px; 
+            width: 280px;
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease-in-out;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            padding-top: 1rem;
+            overflow-y: auto;
+        }
+
+        .sidebar.open {
+            right: 0; 
+        }
+
+        body.dark .sidebar {
+            background-color: #1f2937;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1400;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .sidebar-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar-button {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.25rem; 
+            width: 100%;
+            text-align: right;
+            color: #1f2937; 
+            font-size: 1rem; 
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            border-bottom: 1px solid #f3f4f6; 
+        }
+
+        body.dark .sidebar-button {
+            color: #d1d5db; 
+            border-bottom: 1px solid #374151; 
+        }
+
+        .sidebar-button:hover {
+            background-color: #f3f4f6; 
+            color: #2563eb; 
+        }
+         body.dark .sidebar-button:hover {
+            background-color: #374151;
+            color: #60a5fa;
+        }
+
+
+        .sidebar-button.active {
+            background-color: #dbeafe; 
+            color: #1e40af; 
+            font-weight: 700; 
+        }
+
+        body.dark .sidebar-button.active {
+            background-color: #3b82f6; 
+            color: #ffffff;
+        }
+
+        .sidebar-button i {
+            margin-left: 1rem; 
+            font-size: 1.2rem; 
+        }
+
+        .snackbar {
+            position: fixed;
+            bottom: 20px; 
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(17, 24, 39, 0.85); 
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index: 2000; 
+            min-width: 250px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .snackbar.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+         .snackbar.hide { 
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+
+
+        .lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(17, 24, 39, 0.95); 
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000; 
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2563eb;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 4000; 
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        .splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+        body.dark .splash-screen {
+            background-color: #111827;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2500;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            padding: 1.5rem 2rem; 
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: calc(100% - 2rem); 
+        }
+        body.dark .modal-content {
+            background-color: #1f2937; 
+        }
+    </style>
+</head>
+<body class="font-vazirmatn antialiased">
+
+    <div id="root" class="w-full h-full flex flex-col items-center justify-center"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- START OF AI API INTEGRATION (via Backend Proxy - Secure Method) ---
+        // در این نسخه، هیچ کلید API مستقیماً در کد فرانت‌اند وجود ندارد.
+        // تمام فراخوانی‌های هوش مصنوعی باید از طریق یک بک‌اند پراکسی (Serverless Function) انجام شود.
+
+        /**
+         * Asynchronously generates text by calling your backend proxy.
+         * The backend proxy will then securely call the AI API (e.g., Groq).
+         * @param {string} promptText - The prompt to send to the backend.
+         * @param {string} [model="llama3-8b-8192"] - An optional model identifier to suggest to the backend.
+         * @returns {Promise<string>} The generated text.
+         * @throws {Error} If there's an issue with the backend call or AI API response.
+         */
+        async function generateTextWithAI(promptText, model = "llama3-8b-8192") { // مدل پیش‌فرض به Groq تغییر کرد
+            // این آدرس باید به Serverless Function شما روی Vercel اشاره کند.
+            // اگر فایل بک‌اند شما api/generateText.js نام دارد، این آدرس صحیح است.
+            const backendApiUrl = "/api/generateText"; 
+
+            const payload = {
+                promptText: promptText, 
+                model: model 
+            };
+
+            try {
+                const response = await fetch(backendApiUrl, { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: `خطا در پاسخ بک‌اند: ${response.statusText}` }));
+                    console.error("Backend API Error HTTP Status:", response.status, errorData);
+                    // نمایش پیام خطای عمومی‌تر به کاربر
+                    let userFriendlyError = "متاسفانه در ارتباط با سرویس هوش مصنوعی مشکلی پیش آمده. لطفاً بعداً دوباره تلاش کنید.";
+                    if (response.status === 429) { // Too Many Requests
+                        userFriendlyError = "تعداد درخواست‌های شما از حد مجاز فراتر رفته است. لطفاً کمی صبر کنید و دوباره تلاش نمایید.";
+                    } else if (errorData.error && typeof errorData.error === 'string' && errorData.error.toLowerCase().includes('quota')) {
+                        userFriendlyError = "سهمیه استفاده شما از این سرویس به پایان رسیده است.";
+                    }
+                    throw new Error(userFriendlyError);
+                }
+
+                const result = await response.json();
+
+                if (result.generated_text) { 
+                    return result.generated_text.trim();
+                } else {
+                    console.error("Backend API Error: Invalid response structure from backend", result);
+                    throw new Error(result.error || 'پاسخ نامعتبر از بک‌اند دریافت شد.');
+                }
+            } catch (error) {
+                console.error("Error calling Backend API:", error);
+                 if (error.message && (error.message.toLowerCase().includes("failed to fetch") || error.message.toLowerCase().includes("networkerror"))) {
+                     throw new Error("خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.");
+                }
+                throw error; 
+            }
+        }
+        // --- END OF AI API INTEGRATION (via Backend Proxy) ---
+
+
+        const formatDate = (date) => {
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}/${month}/${day}`;
+        };
+
+        const formatTime = (seconds) => {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        };
+
+        const isSameDay = (d1, d2) => {
+            if (!d1 || !d2) return false;
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        };
+
+        const Snackbar = ({ message, show }) => {
+            return (
+                <div className={`snackbar ${show ? 'show' : ''}`}>
+                    {message}
+                </div>
+            );
+        };
+
+        const useSnackbar = () => {
+            const [snackbarMessage, setSnackbarMessage] = useState('');
+            const [showSnackbarState, setShowSnackbarState] = useState(false); 
+            const snackbarTimerRef = useRef(null);
+
+            const show = (message, duration = 3000) => {
+                if (snackbarTimerRef.current) {
+                    clearTimeout(snackbarTimerRef.current);
+                }
+                setSnackbarMessage(message);
+                setShowSnackbarState(true);
+                snackbarTimerRef.current = setTimeout(() => {
+                    setShowSnackbarState(false);
+                    setSnackbarMessage('');
+                }, duration);
+            };
+
+            return { snackbarMessage, showSnackbar: showSnackbarState, show }; 
+        };
+
+        function SplashScreen({ onFinish }) {
+            const [fadeOut, setFadeOut] = useState(false);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    setFadeOut(true);
+                    const hideTimer = setTimeout(onFinish, 1000); 
+                    return () => clearTimeout(hideTimer);
+                }, 2000); 
+                return () => clearTimeout(timer);
+            }, [onFinish]);
+
+            return (
+                <div className={`splash-screen ${fadeOut ? 'fade-out' : ''}`}>
+                    <i className="fas fa-heartbeat text-8xl mb-6 text-white dark:text-blue-300"></i>
+                    <h1 className="text-5xl font-extrabold text-white mb-4">SafeMind</h1>
+                    <p className="text-xl text-white">سفر شما به سوی آزادی آغاز می‌شود...</p>
+                    <div className="mt-8">
+                        <i className="fas fa-spinner fa-spin text-4xl text-white"></i>
+                    </div>
+                </div>
+            );
+        }
+
+        function RelapseConfirmationModal({ onConfirm, onCancel }) {
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-content text-gray-800 dark:text-gray-200">
+                        <h3 className="text-xl sm:text-2xl font-bold mb-6">آیا شما لغزش داشته اید ؟</h3>
+                        <div className="flex justify-center gap-3 sm:gap-4">
+                            <button
+                                onClick={onConfirm}
+                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 sm:px-6 rounded-lg transition duration-300 text-sm sm:text-base"
+                            >
+                                بله
+                            </button>
+                            <button
+                                onClick={onCancel}
+                                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 sm:px-6 rounded-lg transition duration-300 text-sm sm:text-base"
+                            >
+                                خیر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function UserNamePrompt({ onSaveName }) {
+            const [name, setName] = useState('');
+
+            const handleSave = () => {
+                if (name.trim()) {
+                    onSaveName(name.trim());
+                }
+            };
+
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-content text-gray-800 dark:text-gray-200">
+                        <h3 className="text-xl sm:text-2xl font-bold mb-6">به SafeMind خوش آمدید!</h3>
+                        <p className="text-base sm:text-lg mb-4">لطفاً نام خود را وارد کنید تا سفرتان را شخصی‌سازی کنیم:</p>
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-6 text-center text-sm sm:text-base"
+                            placeholder="نام شما"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleSave(); }}
+                        />
+                        <button
+                            onClick={handleSave}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 text-sm sm:text-base"
+                        >
+                            شروع سفر
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+
+        function HomeScreen({ showSnackbar, userName }) {
+            const [cleanDays, setCleanDays] = useState(0);
+            const [lastCheckInDate, setLastCheckInDate] = useState(null);
+            const [dailyRecords, setDailyRecords] = useState([]);
+            const [isTodayCheckedIn, setIsTodayCheckedIn] = useState(false);
+            const [dailyUniqueEffects, setDailyUniqueEffects] = useState([]);
+
+            useEffect(() => {
+                const storedCleanDays = localStorage.getItem('safemind_clean_days');
+                const storedLastCheckInDate = localStorage.getItem('safemind_last_check_in_date');
+                const storedDailyRecords = localStorage.getItem('safemind_daily_records');
+                const storedEffects = localStorage.getItem('safemind_effects');
+                const storedDailyEffectsDate = localStorage.getItem('safemind_daily_effects_date');
+                const storedDailyEffectsList = localStorage.getItem('safemind_daily_effects_list');
+
+                if (storedCleanDays) {
+                    setCleanDays(parseInt(storedCleanDays, 10));
+                }
+                if (storedLastCheckInDate) {
+                    const date = new Date(storedLastCheckInDate);
+                    setLastCheckInDate(date);
+                    setIsTodayCheckedIn(isSameDay(date, new Date()));
+                }
+                if (storedDailyRecords) {
+                    setDailyRecords(JSON.parse(storedDailyRecords).map(dateStr => new Date(dateStr)));
+                }
+
+                const today = new Date();
+                let effectsList = storedEffects ? JSON.parse(storedEffects) : [
+                    "افزایش انرژی و شادابی", "بهبود تمرکز و حافظه", "خواب بهتر و عمیق‌تر",
+                    "کاهش استرس و اضطراب", "افزایش اعتماد به نفس", "بهبود روابط اجتماعی",
+                    "پوست و موی سالم‌تر", "بهبود حس بویایی و چشایی", "افزایش بهره‌وری",
+                    "کاهش خطر بیماری‌ها", "زندگی شادتر", "آرامش درونی"
+                ];
+
+                if (isSameDay(new Date(storedDailyEffectsDate), today) && storedDailyEffectsList) {
+                    setDailyUniqueEffects(JSON.parse(storedDailyEffectsList));
+                } else {
+                    if (effectsList.length >= 3) {
+                        const shuffled = [...effectsList].sort(() => 0.5 - Math.random());
+                        const selectedEffects = shuffled.slice(0, 3);
+                        setDailyUniqueEffects(selectedEffects);
+                        localStorage.setItem('safemind_daily_effects_date', today.toISOString());
+                        localStorage.setItem('safemind_daily_effects_list', JSON.stringify(selectedEffects));
+                    } else {
+                        setDailyUniqueEffects(effectsList); 
+                    }
+                }
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('safemind_clean_days', cleanDays.toString());
+                localStorage.setItem('safemind_last_check_in_date', lastCheckInDate ? lastCheckInDate.toISOString() : '');
+                localStorage.setItem('safemind_daily_records', JSON.stringify(dailyRecords.map(date => date.toISOString())));
+            }, [cleanDays, lastCheckInDate, dailyRecords]);
+
+            const handleCheckIn = () => {
+                const today = new Date();
+                if (isSameDay(lastCheckInDate, today)) {
+                    showSnackbar('شما قبلاً امروز را ثبت کرده‌اید.');
+                    return;
+                }
+
+                const newDailyRecords = [...dailyRecords, today];
+                setDailyRecords(newDailyRecords);
+                setCleanDays(newDailyRecords.length); 
+                setLastCheckInDate(today);
+                setIsTodayCheckedIn(true);
+                showSnackbar('تبریک! امروز هم پاک هستید.');
+            };
+
+            const todayFormatted = formatDate(new Date());
+            const progressPercentage = Math.min((cleanDays / 90) * 100, 100);
+
+
+            return (
+                <div className="text-center p-4 sm:p-6 flex flex-col items-center">
+                    <div className="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6 rounded-xl shadow-lg mb-6 sm:mb-8">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold mb-2">
+                            {userName ? `خوش آمدید، ${userName}!` : 'به SafeMind خوش آمدید!'}
+                        </h2>
+                        <p className="text-lg sm:text-xl">
+                            سفر شما به سوی آزادی از همین امروز آغاز می‌شود.
+                        </p>
+                    </div>
+
+                    <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-6 sm:mb-8">
+                        امروز: {todayFormatted}
+                    </p>
+
+                    <div className="clean-days-box p-6 sm:p-8 rounded-2xl border-2 mb-8 sm:mb-10 inline-block w-full max-w-xs sm:max-w-sm transform transition-transform duration-300 hover:scale-105 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-700 dark:to-gray-800 opacity-20 rounded-2xl"></div>
+                        <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 relative z-10">
+                            روزهای پاک:
+                        </h2>
+                        <p className="text-7xl sm:text-8xl font-extrabold text-blue-800 dark:text-blue-200 mt-3 sm:mt-4 leading-none relative z-10">
+                            {cleanDays}
+                        </p>
+                        <p className="text-xl sm:text-2xl font-semibold text-blue-600 dark:text-blue-400 mt-1 sm:mt-2 relative z-10">
+                            از ۹۰ روز
+                        </p>
+                    </div>
+
+                    <div className="w-full max-w-xs sm:max-w-sm bg-gray-200 dark:bg-gray-700 rounded-full h-3 sm:h-4 mb-6 sm:mb-8 relative">
+                        <div
+                            className="bg-blue-500 h-3 sm:h-4 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${progressPercentage}%` }}
+                        ></div>
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-white dark:text-gray-200" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>
+                            {progressPercentage.toFixed(0)}%
+                        </span>
+                    </div>
+
+
+                    <button
+                        onClick={handleCheckIn}
+                        disabled={isTodayCheckedIn}
+                        className={`flex items-center justify-center mx-auto px-6 py-3 sm:px-8 sm:py-4 rounded-full text-white font-bold text-lg sm:text-2xl transition duration-300 ease-in-out transform hover:scale-105 w-full max-w-[280px] sm:max-w-xs shadow-lg hover:shadow-xl
+                            ${isTodayCheckedIn ? 'bg-green-500 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+                        `}
+                    >
+                        {isTodayCheckedIn ? (
+                            <>
+                                <i className="fas fa-check-circle ml-2 text-xl sm:text-3xl"></i>
+                                امروز ثبت شد!
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-hand-holding-heart ml-2 text-xl sm:text-3xl"></i>
+                                من امروز پاک هستم
+                            </>
+                        )}
+                    </button>
+
+                    {dailyUniqueEffects.length > 0 && (
+                        <div className="mt-8 sm:mt-10 p-4 sm:p-6 bg-blue-50 dark:bg-gray-800 rounded-xl shadow-md w-full max-w-md mx-auto border border-blue-200 dark:border-gray-700">
+                            <h3 className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-300 mb-3 sm:mb-4">اثرات مثبت امروز:</h3>
+                            <ul className="space-y-2 sm:space-y-3 text-right">
+                                {dailyUniqueEffects.map((effect, index) => (
+                                    <li key={index} className="flex items-center text-gray-800 dark:text-gray-200 text-sm sm:text-lg">
+                                        <i className="fas fa-check-circle text-green-500 ml-2 sm:ml-3"></i>
+                                        {effect}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function MotivationalMessagesScreen({ showSnackbar }) {
+            const [messages, setMessages] = useState(() => {
+                const storedMessages = localStorage.getItem('safemind_messages');
+                return storedMessages ? JSON.parse(storedMessages) : [
+                    "هر روز یک قدم به سوی آزادی بیشتر.",
+                    "قدرت درونی شما بی‌نهایت است.",
+                    "شما قوی‌تر از هر وسوسه‌ای هستید.",
+                    "به خودت افتخار کن، تو داری تغییر می‌کنی.",
+                    "امروز، فردای بهتری را بساز."
+                ];
+            });
+            const [newMessage, setNewMessage] = useState('');
+            const [dailyMessage, setDailyMessage] = useState('');
+            const [lastMessageDate, setLastMessageDate] = useState(null);
+            const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
+
+            useEffect(() => {
+                localStorage.setItem('safemind_messages', JSON.stringify(messages));
+                displayDailyMessage(); 
+            }, [messages]);
+
+            useEffect(() => {
+                const storedLastMessageDate = localStorage.getItem('safemind_last_message_date');
+                if (storedLastMessageDate) {
+                    setLastMessageDate(new Date(storedLastMessageDate));
+                }
+                displayDailyMessage(); 
+            }, []); 
+
+            const displayDailyMessage = () => {
+                const today = new Date();
+                if ((!isSameDay(lastMessageDate, today) || !dailyMessage) && messages.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * messages.length);
+                    setDailyMessage(messages[randomIndex]);
+                    setLastMessageDate(today);
+                    localStorage.setItem('safemind_last_message_date', today.toISOString());
+                } else if (messages.length === 0) {
+                    setDailyMessage('پیامی برای نمایش وجود ندارد. یکی اضافه کنید!');
+                }
+            };
+
+
+            const handleAddMessage = () => {
+                if (newMessage.trim()) {
+                    setMessages([...messages, newMessage.trim()]);
+                    setNewMessage('');
+                    showSnackbar('پیام انگیزشی اضافه شد!');
+                }
+            };
+
+            const handleDeleteMessage = (indexToDelete) => {
+                const updatedMessages = messages.filter((_, index) => index !== indexToDelete);
+                setMessages(updatedMessages);
+                showSnackbar('پیام حذف شد!');
+            };
+
+            const generateNewMessage = async () => {
+                setIsGeneratingMessage(true);
+                setDailyMessage('در حال تولید پیام جدید...');
+                try {
+                    const prompt = "یک پیام انگیزشی کوتاه، امیدبخش و مثبت برای کسی که در حال ترک یک عادت بد است، بنویسید. پیام باید انرژی‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید."; 
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192"); // استفاده از مدل Groq
+                    setDailyMessage(generatedText);
+                    showSnackbar('پیام جدید با موفقیت تولید شد!');
+                } catch (error) {
+                    console.error("Error generating message:", error);
+                    showSnackbar(error.message || 'خطا در ارتباط با هوش مصنوعی.');
+                    setDailyMessage('خطا در تولید پیام. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingMessage(false);
+                }
+            };
+
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">پیام انگیزشی روز</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
+                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+                            "{dailyMessage || (messages.length > 0 ? "در حال بارگذاری پیام..." : "پیامی برای نمایش وجود ندارد.")}"
+                        </p>
+                    </div>
+                    <button
+                        onClick={generateNewMessage}
+                        disabled={isGeneratingMessage}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
+                    >
+                        {isGeneratingMessage ? (
+                            <i className="fas fa-spinner fa-spin ml-2"></i>
+                        ) : (
+                            <i className="fas fa-magic ml-2"></i>
+                        )}
+                        تولید پیام جدید ✨
+                    </button>
+
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">پیام‌های شما</h3>
+                    <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <input
+                            type="text"
+                            className="flex-grow p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
+                            placeholder="یک پیام جدید اضافه کنید..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleAddMessage(); }}
+                        />
+                        <button
+                            onClick={handleAddMessage}
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base"
+                        >
+                            <i className="fas fa-plus ml-1 sm:ml-2"></i>
+                            افزودن
+                        </button>
+                    </div>
+
+                    <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {messages.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز پیامی اضافه نشده است.</li>}
+                        {messages.map((msg, index) => (
+                            <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
+                                <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{msg}</span>
+                                <button
+                                    onClick={() => handleDeleteMessage(index)}
+                                    className="text-red-500 hover:text-red-700 transition duration-200 p-1"
+                                >
+                                    <i className="fas fa-trash-alt text-sm sm:text-base"></i>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            );
+        }
+
+        function PositiveEffectsScreen({ showSnackbar }) {
+            const [effects, setEffects] = useState(() => {
+                const storedEffects = localStorage.getItem('safemind_effects');
+                return storedEffects ? JSON.parse(storedEffects) : [
+                    "افزایش انرژی و شادابی",
+                    "بهبود تمرکز و حافظه",
+                    "خواب بهتر و عمیق‌تر",
+                ];
+            });
+            const [newEffect, setNewEffect] = useState('');
+            const [dailyEffect, setDailyEffect] = useState('');
+            const [lastEffectDate, setLastEffectDate] = useState(null);
+            const [expandedEffectExplanation, setExpandedEffectExplanation] = useState('');
+            const [isExpandingEffect, setIsExpandingEffect] = useState(false);
+
+            useEffect(() => {
+                localStorage.setItem('safemind_effects', JSON.stringify(effects));
+                displayDailyEffect();
+            }, [effects]);
+
+            useEffect(() => {
+                const storedLastEffectDate = localStorage.getItem('safemind_last_effect_date'); 
+                if (storedLastEffectDate) {
+                    setLastEffectDate(new Date(storedLastEffectDate));
+                }
+                displayDailyEffect();
+            }, []);
+
+            const displayDailyEffect = () => {
+                const today = new Date();
+                if ((!isSameDay(lastEffectDate, today) || !dailyEffect) && effects.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * effects.length);
+                    setDailyEffect(effects[randomIndex]);
+                    setLastEffectDate(today);
+                    localStorage.setItem('safemind_last_effect_date', today.toISOString()); // کلید صحیح
+                    setExpandedEffectExplanation(''); 
+                } else if (effects.length === 0) {
+                    setDailyEffect('اثری برای نمایش وجود ندارد. یکی اضافه کنید!');
+                    setExpandedEffectExplanation('');
+                }
+            };
+
+            const handleAddEffect = () => {
+                if (newEffect.trim()) {
+                    setEffects([...effects, newEffect.trim()]);
+                    setNewEffect('');
+                    showSnackbar('اثر مثبت اضافه شد!');
+                }
+            };
+
+            const handleDeleteEffect = (indexToDelete) => {
+                const updatedEffects = effects.filter((_, index) => index !== indexToDelete);
+                setEffects(updatedEffects);
+                showSnackbar('اثر مثبت حذف شد!');
+            };
+
+            const expandEffectExplanation = async () => {
+                if (!dailyEffect || dailyEffect === 'اثری برای نمایش وجود ندارد. یکی اضافه کنید!') {
+                    showSnackbar('ابتدا یک اثر مثبت برای توضیح انتخاب کنید.');
+                    return;
+                }
+                setIsExpandingEffect(true);
+                setExpandedEffectExplanation('در حال دریافت توضیح...');
+                try {
+                    const prompt = `توضیح دهید که چگونه ترک یک عادت بد منجر به اثر مثبت زیر می‌شود: "${dailyEffect}". در یک پاراگراف کوتاه و مفید توضیح دهید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`; 
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192"); // استفاده از مدل Groq
+                    setExpandedEffectExplanation(generatedText);
+                    showSnackbar('توضیح با موفقیت دریافت شد!');
+                } catch (error) {
+                    console.error("Error expanding effect:", error);
+                    showSnackbar(error.message || 'خطا در ارتباط با هوش مصنوعی.');
+                    setExpandedEffectExplanation('خطا در دریافت توضیح. دوباره تلاش کنید.');
+                } finally {
+                    setIsExpandingEffect(false);
+                }
+            };
+
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">اثر مثبت روز</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center">
+                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+                             "{dailyEffect || (effects.length > 0 ? "در حال بارگذاری اثر..." : "اثری برای نمایش وجود ندارد.")}"
+                        </p>
+                        {expandedEffectExplanation && (
+                            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-600 text-xs sm:text-sm text-gray-700 dark:text-gray-300 text-justify">
+                                <p className="font-bold mb-1 sm:mb-2">توضیح:</p>
+                                {expandedEffectExplanation}
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        onClick={expandEffectExplanation}
+                        disabled={isExpandingEffect || !dailyEffect || dailyEffect === 'اثری برای نمایش وجود ندارد. یکی اضافه کنید!'}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
+                    >
+                        {isExpandingEffect ? (
+                            <i className="fas fa-spinner fa-spin ml-2"></i>
+                        ) : (
+                            <i className="fas fa-lightbulb ml-2"></i>
+                        )}
+                        توضیح اثر مثبت ✨
+                    </button>
+
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">اثرات مثبت شما</h3>
+                    <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <input
+                            type="text"
+                            className="flex-grow p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base"
+                            placeholder="یک اثر مثبت جدید اضافه کنید..."
+                            value={newEffect}
+                            onChange={(e) => setNewEffect(e.target.value)}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleAddEffect(); }}
+                        />
+                        <button
+                            onClick={handleAddEffect}
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base"
+                        >
+                            <i className="fas fa-plus ml-1 sm:ml-2"></i>
+                            افزودن
+                        </button>
+                    </div>
+
+                    <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {effects.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز اثری اضافه نشده است.</li>}
+                        {effects.map((effect, index) => (
+                            <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
+                                <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{effect}</span>
+                                <button
+                                    onClick={() => handleDeleteEffect(index)}
+                                    className="text-red-500 hover:text-red-700 transition duration-200 p-1"
+                                >
+                                    <i className="fas fa-trash-alt text-sm sm:text-base"></i>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            );
+        }
+
+        function ReasonsWallScreen({ showSnackbar }) {
+            const [reasons, setReasons] = useState(() => {
+                const storedReasons = localStorage.getItem('safemind_reasons');
+                return storedReasons ? JSON.parse(storedReasons) : ["برای سلامتی بهتر", "برای خانواده‌ام", "برای آینده‌ام"];
+            });
+            const [newReason, setNewReason] = useState('');
+            const [generatedReason, setGeneratedReason] = useState('');
+            const [isGeneratingReason, setIsGeneratingReason] = useState(false);
+
+            useEffect(() => { localStorage.setItem('safemind_reasons', JSON.stringify(reasons)); }, [reasons]);
+
+            const handleAddReason = () => {
+                if (newReason.trim()) {
+                    setReasons([...reasons, newReason.trim()]);
+                    setNewReason('');
+                    showSnackbar('دلیل جدید اضافه شد!');
+                }
+            };
+            const handleDeleteReason = (indexToDelete) => setReasons(reasons.filter((_, index) => index !== indexToDelete));
+
+            const generateNewReason = async () => {
+                setIsGeneratingReason(true);
+                setGeneratedReason('در حال تولید دلیل جدید...');
+                try {
+                    const prompt = "یک دلیل قوی و انگیزشی برای ترک یک عادت بد بنویسید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
+                    const newGeneratedReasonText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
+                    setGeneratedReason(newGeneratedReasonText);
+                    showSnackbar('دلیل جدید با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید دلیل.');
+                    setGeneratedReason('خطا در تولید دلیل. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingReason(false);
+                }
+            };
+             return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">دیوار دلایل ترک</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
+                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+                            {generatedReason || "یک دلیل جدید تولید کنید یا از لیست خود انتخاب کنید!"}
+                        </p>
+                    </div>
+                    <button
+                        onClick={generateNewReason}
+                        disabled={isGeneratingReason}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base"
+                    >
+                        {isGeneratingReason ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-lightbulb ml-2"></i>}
+                        تولید دلیل جدید ✨
+                    </button>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">دلایل شما</h3>
+                    <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <input type="text" className="flex-grow p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base" placeholder="یک دلیل جدید اضافه کنید..." value={newReason} onChange={(e) => setNewReason(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') handleAddReason(); }} />
+                        <button onClick={handleAddReason} className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base">
+                            <i className="fas fa-plus ml-1 sm:ml-2"></i> افزودن
+                        </button>
+                    </div>
+                    <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {reasons.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز دلیلی اضافه نشده است.</li>}
+                        {reasons.map((reason, index) => (
+                            <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
+                                <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{reason}</span>
+                                <button onClick={() => handleDeleteReason(index)} className="text-red-500 hover:text-red-700 transition duration-200 p-1"><i className="fas fa-trash-alt text-sm sm:text-base"></i></button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            );
+        }
+
+
+        function TemptationStatsScreen({ showSnackbar }) {
+            const [temptations, setTemptations] = useState(() => {
+                const storedTemptations = localStorage.getItem('safemind_temptations');
+                return storedTemptations ? JSON.parse(storedTemptations).map(t => ({ ...t, date: new Date(t.date) })) : [];
+            });
+            const [tempDescription, setTempDescription] = useState('');
+            const [analysisResult, setAnalysisResult] = useState('');
+            const [isAnalyzingTemptations, setIsAnalyzingTemptations] = useState(false);
+
+            useEffect(() => { localStorage.setItem('safemind_temptations', JSON.stringify(temptations.map(t => ({ ...t, date: t.date.toISOString() })))); }, [temptations]);
+
+            const handleAddTemptation = () => {
+                if (tempDescription.trim()) {
+                    setTemptations([...temptations, { id: Date.now(), date: new Date(), description: tempDescription.trim() }]);
+                    setTempDescription('');
+                    showSnackbar('وسوسه ثبت شد!');
+                }
+            };
+            const handleDeleteTemptation = (idToDelete) => setTemptations(temptations.filter(t => t.id !== idToDelete));
+
+            const analyzeTemptations = async () => {
+                if (temptations.length === 0) {
+                    showSnackbar('ابتدا چند وسوسه ثبت کنید.');
+                    return;
+                }
+                setIsAnalyzingTemptations(true);
+                setAnalysisResult('در حال تحلیل وسوسه‌ها...');
+                try {
+                    const temptationList = temptations.map(t => `${formatDate(t.date)}: ${t.description}`).join('\n');
+                    const prompt = `با توجه به لیست وسوسه‌های زیر، الگوها را تحلیل کرده و سه استراتژی مقابله‌ای مؤثر و عملی پیشنهاد دهید. وسوسه‌ها: \n${temptationList}\n لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setAnalysisResult(generatedText);
+                    showSnackbar('تحلیل با موفقیت انجام شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تحلیل وسوسه‌ها.');
+                    setAnalysisResult('خطا در تحلیل وسوسه‌ها. دوباره تلاش کنید.');
+                } finally {
+                    setIsAnalyzingTemptations(false);
+                }
+            };
+            return (
+                 <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">آمار و تحلیل وسوسه</h2>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">ثبت وسوسه</h3>
+                    <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <input type="text" className="flex-grow p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base" placeholder="توضیح کوتاهی از وسوسه..." value={tempDescription} onChange={(e) => setTempDescription(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') handleAddTemptation(); }} />
+                        <button onClick={handleAddTemptation} className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base">
+                            <i className="fas fa-plus ml-1 sm:ml-2"></i> ثبت وسوسه
+                        </button>
+                    </div>
+                    <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg mb-6 sm:mb-8">
+                        {temptations.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز وسوسه‌ای ثبت نشده است.</li>}
+                        {temptations.map((temp) => (
+                            <li key={temp.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
+                                <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{temp.description} ({formatDate(temp.date)})</span>
+                                <button onClick={() => handleDeleteTemptation(temp.id)} className="text-red-500 hover:text-red-700 transition duration-200 p-1"><i className="fas fa-trash-alt text-sm sm:text-base"></i></button>
+                            </li>
+                        ))}
+                    </ul>
+                    <button onClick={analyzeTemptations} disabled={isAnalyzingTemptations || temptations.length === 0} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isAnalyzingTemptations ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-brain ml-2"></i>}
+                        تحلیل وسوسه‌ها و پیشنهاد راهکار ✨
+                    </button>
+                    {analysisResult && (
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left">
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">نتیجه تحلیل:</h3>
+                            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm sm:text-base">{analysisResult}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function ProfileScreen({ showSnackbar, userName }) {
+            const [cleanDays, setCleanDays] = useState(0);
+            const [startDate, setStartDate] = useState(null);
+            const [dailyRecords, setDailyRecords] = useState([]);
+            const [temptations, setTemptations] = useState([]);
+            const [progressReport, setProgressReport] = useState('');
+            const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+            useEffect(() => {
+                setCleanDays(parseInt(localStorage.getItem('safemind_clean_days') || '0', 10));
+                const storedDailyRecords = localStorage.getItem('safemind_daily_records');
+                if (storedDailyRecords) {
+                    const records = JSON.parse(storedDailyRecords).map(dateStr => new Date(dateStr));
+                    setDailyRecords(records);
+                    if (records.length > 0) { records.sort((a,b) => a-b); setStartDate(records[0]); }
+                }
+                const storedTemptations = localStorage.getItem('safemind_temptations');
+                if (storedTemptations) setTemptations(JSON.parse(storedTemptations).map(t => ({ ...t, date: new Date(t.date) })));
+            }, []);
+
+            const generateProgressReport = async () => {
+                setIsGeneratingReport(true);
+                setProgressReport('در حال تولید گزارش پیشرفت...');
+                try {
+                    const prompt = `یک گزارش پیشرفت شخصی‌سازی‌شده و انگیزشی برای کاربری به نام ${userName || 'کاربر'} که ${cleanDays} روز است یک عادت بد را ترک کرده است. تاریخ شروع ترک او ${startDate ? formatDate(startDate) : 'مشخص نیست'} است. او تا کنون ${temptations.length} بار وسوسه را ثبت کرده است. گزارش باید شامل تمجید از پیشرفت، بینش‌های کلی و توصیه‌هایی برای آینده باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setProgressReport(generatedText);
+                    showSnackbar('گزارش با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید گزارش.');
+                    setProgressReport('خطا در تولید گزارش. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingReport(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">پروفایل و تاریخچه</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-4 sm:mb-6 text-left text-sm sm:text-base">
+                        <p className="font-semibold mb-1 sm:mb-2 text-gray-800 dark:text-gray-200">نام کاربری: <span className="text-blue-600 dark:text-blue-400">{userName || 'مهمان'}</span></p>
+                        <p className="font-semibold mb-1 sm:mb-2 text-gray-800 dark:text-gray-200">روزهای پاک: <span className="text-blue-600 dark:text-blue-400">{cleanDays}</span></p>
+                        <p className="font-semibold mb-1 sm:mb-2 text-gray-800 dark:text-gray-200">تاریخ شروع: {startDate ? formatDate(startDate) : 'هنوز ثبت نشده'}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">تعداد وسوسه‌های ثبت شده: {temptations.length}</p>
+                    </div>
+                    <button onClick={generateProgressReport} disabled={isGeneratingReport} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isGeneratingReport ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-file-alt ml-2"></i>}
+                        دریافت گزارش پیشرفت ✨
+                    </button>
+                    {progressReport && (
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left">
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">گزارش پیشرفت شما:</h3>
+                            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm sm:text-base">{progressReport}</p>
+                        </div>
+                    )}
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 mt-6 sm:mt-8">تاریخچه‌ی روزانه‌ی پاکی</h3>
+                    <ul className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {dailyRecords.length === 0 && <li className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">هنوز روزی ثبت نشده است.</li>}
+                        {[...dailyRecords].reverse().map((record, index) => (
+                            <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
+                                <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{formatDate(record)} - روز پاک</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            );
+        }
+
+        function NotificationSettingsScreen({ showSnackbar }) {
+            const [dailyCheckInTime, setDailyCheckInTime] = useState(localStorage.getItem('notification_daily_check_in_time') || '09:00');
+            const [motivationalMessageTime, setMotivationalMessageTime] = useState(localStorage.getItem('notification_motivational_message_time') || '12:00');
+            const [isDailyCheckInEnabled, setIsDailyCheckInEnabled] = useState(localStorage.getItem('notification_daily_check_in_enabled') === 'true');
+            const [isMotivationalMessageEnabled, setIsMotivationalMessageEnabled] = useState(localStorage.getItem('notification_motivational_message_enabled') === 'true');
+
+            useEffect(() => {
+                localStorage.setItem('notification_daily_check_in_time', dailyCheckInTime);
+                localStorage.setItem('notification_motivational_message_time', motivationalMessageTime);
+                localStorage.setItem('notification_daily_check_in_enabled', isDailyCheckInEnabled.toString());
+                localStorage.setItem('notification_motivational_message_enabled', isMotivationalMessageEnabled.toString());
+                if ((isDailyCheckInEnabled || isMotivationalMessageEnabled) && typeof Notification !== 'undefined' && Notification.permission === "default") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            showSnackbar("نوتیفیکیشن‌ها فعال شدند.");
+                        } else {
+                            showSnackbar("اجازه نوتیفیکیشن داده نشد.");
+                        }
+                    });
+                }
+            }, [dailyCheckInTime, motivationalMessageTime, isDailyCheckInEnabled, isMotivationalMessageEnabled, showSnackbar]);
+
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">تنظیمات نوتیفیکیشن</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">توجه: این نوتیفیکیشن‌ها فقط زمانی کار می‌کنند که اپلیکیشن در مرورگر باز باشد.</p>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-4 sm:mb-6 text-left">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <span className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">یادآور ثبت روزانه</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={isDailyCheckInEnabled} onChange={(e) => setIsDailyCheckInEnabled(e.target.checked)} />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        {isDailyCheckInEnabled && (
+                            <div className="flex items-center mt-2">
+                                <label htmlFor="daily-time" className="text-gray-700 dark:text-gray-300 ml-2 text-sm sm:text-base">ساعت:</label>
+                                <input type="time" id="daily-time" value={dailyCheckInTime} onChange={(e) => setDailyCheckInTime(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm sm:text-base" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md text-left">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <span className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">یادآور پیام انگیزشی</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={isMotivationalMessageEnabled} onChange={(e) => setIsMotivationalMessageEnabled(e.target.checked)} />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        {isMotivationalMessageEnabled && (
+                            <div className="flex items-center mt-2">
+                                <label htmlFor="motivational-time" className="text-gray-700 dark:text-gray-300 ml-2 text-sm sm:text-base">ساعت:</label>
+                                <input type="time" id="motivational-time" value={motivationalMessageTime} onChange={(e) => setMotivationalMessageTime(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm sm:text-base" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+         function ChallengesScreen({ showSnackbar }) {
+            const [challenge, setChallenge] = useState('');
+            const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
+
+            const generateChallenge = async () => {
+                setIsGeneratingChallenge(true);
+                setChallenge('در حال تولید چالش جدید...');
+                try {
+                    const prompt = "یک چالش عملی و کوچک روزانه برای کسی که در حال ترک یک عادت بد است و می‌خواهد خود را تقویت کند، ارائه دهید. چالش باید کوتاه، قابل اجرا، و خلاقانه باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setChallenge(generatedText);
+                    showSnackbar('چالش با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید چالش.');
+                    setChallenge('خطا در تولید چالش. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingChallenge(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">چالش روزانه</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
+                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+                            "{challenge || "برای دریافت چالش روزانه خود، دکمه زیر را فشار دهید."}"
+                        </p>
+                    </div>
+                    <button onClick={generateChallenge} disabled={isGeneratingChallenge} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isGeneratingChallenge ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-dumbbell ml-2"></i>}
+                        دریافت چالش جدید ✨
+                    </button>
+                </div>
+            );
+        }
+
+        function EmergencyLockScreen({ showSnackbar, setLockedState, emergencyLockRefFromApp }) {
+            const [lockTimer, setLockTimer] = useState(0);
+            const [deterrentMessage, setDeterrentMessage] = useState('');
+            const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
+            const timerIntervalRef = useRef(null);
+
+            useEffect(() => {
+                if (lockTimer > 0) {
+                    timerIntervalRef.current = setInterval(() => {
+                        setLockTimer(prevTime => {
+                            if (prevTime <= 1) {
+                                clearInterval(timerIntervalRef.current);
+                                setLockedState(false);
+                                setDeterrentMessage('');
+                                showSnackbar('قفل اضطراری به پایان رسید.');
+                                return 0;
+                            }
+                            return prevTime - 1;
+                        });
+                    }, 1000);
+                } else if (timerIntervalRef.current) {
+                    clearInterval(timerIntervalRef.current);
+                }
+                return () => clearInterval(timerIntervalRef.current);
+            }, [lockTimer, setLockedState, showSnackbar]);
+
+            const startLock = async (durationSeconds = 300) => {
+                setLockTimer(durationSeconds);
+                setDeterrentMessage('در حال تولید پیام بازدارنده...');
+                setIsGeneratingMessage(true);
+                setLockedState(true);
+                try {
+                    const prompt = "یک پیام بازدارنده بسیار قوی و مؤثر برای کسی که در لحظه بحران و وسوسه شدید برای بازگشت به عادت بد است، بنویسید. پیام باید بر احساس آزادی، آینده، سلامتی، و از دست دادن پیشرفت تمرکز کند و بسیار قانع کننده باشد. زبان فارسی و لحن جدی و حمایتی باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setDeterrentMessage(generatedText);
+                } catch (error) {
+                    setDeterrentMessage('خطا در تولید پیام. مقاومت کن! به یاد بیاور چرا شروع کردی.');
+                    showSnackbar(error.message || 'خطا در ارتباط با هوش مصنوعی.');
+                } finally {
+                    setIsGeneratingMessage(false);
+                }
+            };
+
+            const cancelLock = () => {
+                clearInterval(timerIntervalRef.current);
+                setLockTimer(0);
+                setDeterrentMessage('');
+                setIsGeneratingMessage(false);
+                setLockedState(false);
+                showSnackbar('قفل اضطراری لغو شد.');
+            };
+            React.useImperativeHandle(emergencyLockRefFromApp, () => ({ lockTimer, deterrentMessage, isGeneratingMessage, cancelLock, startLock }));
+
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-6 sm:mb-8">قفل اضطراری</h2>
+                    {lockTimer === 0 ? (
+                        <button onClick={() => startLock()} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center mx-auto text-lg sm:text-2xl">
+                            <i className="fas fa-lock ml-2"></i> فعال‌سازی قفل اضطراری
+                        </button>
+                    ) : (
+                        <div className="flex flex-col items-center">
+                            <p className="text-5xl sm:text-6xl font-extrabold text-red-600 dark:text-red-400 mb-4 sm:mb-6">{formatTime(lockTimer)}</p>
+                            {isGeneratingMessage ? (
+                                <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4 flex items-center">
+                                    <i className="fas fa-spinner fa-spin ml-2"></i> در حال دریافت پیام بازدارنده...
+                                </p>
+                            ) : (
+                                <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-6 sm:mb-8 min-h-[120px] sm:min-h-[150px]">
+                                    <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">"{deterrentMessage}"</p>
+                                </div>
+                            )}
+                            <button onClick={cancelLock} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 sm:px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center mx-auto mt-3 sm:mt-4 text-sm sm:text-base">
+                                <i className="fas fa-times-circle ml-2"></i> لغو قفل
+                            </button>
+                        </div>
+                    )}
+                    <p className="text-gray-600 dark:text-gray-400 mt-6 sm:mt-8 text-xs sm:text-sm">این قفل برای لحظات شدید وسوسه طراحی شده است.</p>
+                </div>
+            );
+        }
+
+        function RecommendationsScreen({ showSnackbar }) {
+            const [recommendations, setRecommendations] = useState('');
+            const [isGeneratingRecommendations, setIsGeneratingRecommendations] = useState(false);
+
+            const generateRecommendations = async () => {
+                setIsGeneratingRecommendations(true);
+                setRecommendations('در حال تولید توصیه‌ها...');
+                try {
+                    const prompt = "ارائه دهنده ۵ توصیه‌ی عملی و انگیزشی برای کسی که در حال ترک یک عادت بد است و می‌خواهد انگیزه‌ی خود را حفظ کند و زندگی سالمی داشته باشد. توصیه‌ها باید کوتاه، قابل اجرا و به صورت لیست شماره‌دار باشند. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setRecommendations(generatedText);
+                    showSnackbar('توصیه‌ها با موفقیت دریافت شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در دریافت توصیه‌ها.');
+                    setRecommendations('خطا در دریافت توصیه‌ها. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingRecommendations(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">توصیه‌ها</h2>
+                    <button onClick={generateRecommendations} disabled={isGeneratingRecommendations} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isGeneratingRecommendations ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-star ml-2"></i>}
+                        دریافت توصیه‌های جدید ✨
+                    </button>
+                    {recommendations && (
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left whitespace-pre-wrap">
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">توصیه‌هایی برای شما:</h3>
+                            <div className="text-gray-800 dark:text-gray-200 text-sm sm:text-base space-y-1">{recommendations.split('\n').map((rec, i) => <p key={i}>{rec}</p>)}</div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function RewardsScreen({ showSnackbar, userName }) {
+            const [rewardMessage, setRewardMessage] = useState('');
+            const [isGeneratingReward, setIsGeneratingReward] = useState(false);
+            const [cleanDaysForReward, setCleanDaysForReward] = useState(0);
+
+            useEffect(() => {
+                const storedCleanDays = localStorage.getItem('safemind_clean_days');
+                if (storedCleanDays) setCleanDaysForReward(parseInt(storedCleanDays, 10));
+            }, []);
+
+            const generateRewardMessage = async () => {
+                setIsGeneratingReward(true);
+                setRewardMessage('در حال تولید پیام پاداش...');
+                try {
+                    const prompt = `یک پیام تبریک و پاداش شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForReward} روز است که یک عادت بد را ترک کرده، بنویسید. پیام باید بسیار انگیزشی، دلگرم‌کننده و با تمرکز بر دستاورد او باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setRewardMessage(generatedText);
+                    showSnackbar('پیام پاداش با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید پیام پاداش.');
+                    setRewardMessage('خطا در تولید پیام پاداش. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingReward(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">پاداش‌های شما</h2>
+                    <p className="text-lg sm:text-xl text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">شما تا کنون <span className="font-bold text-blue-600 dark:text-blue-400">{cleanDaysForReward}</span> روز پاک بوده‌اید!</p>
+                    <button onClick={generateRewardMessage} disabled={isGeneratingReward} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isGeneratingReward ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-trophy ml-2"></i>}
+                        دریافت پیام پاداش ✨
+                    </button>
+                    {rewardMessage && (
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left">
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">پیام تبریک:</h3>
+                            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap text-sm sm:text-base">{rewardMessage}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function DailyAffirmationScreen({ showSnackbar, userName }) {
+            const [affirmation, setAffirmation] = useState('');
+            const [isGeneratingAffirmation, setIsGeneratingAffirmation] = useState(false);
+            const [cleanDaysForAffirmation, setCleanDaysForAffirmation] = useState(0);
+
+             useEffect(() => {
+                const storedCleanDays = localStorage.getItem('safemind_clean_days');
+                if (storedCleanDays) setCleanDaysForAffirmation(parseInt(storedCleanDays, 10));
+            }, []);
+
+            const generateAffirmation = async () => {
+                setIsGeneratingAffirmation(true);
+                setAffirmation('در حال تولید تأییدیه...');
+                try {
+                    const prompt = `یک تأییدیه (affirmation) مثبت و شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForAffirmation} روز است که یک عادت بد را ترک کرده، بنویسید. تأییدیه باید کوتاه، قدرتمند و الهام‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setAffirmation(generatedText);
+                    showSnackbar('تأییدیه با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید تأییدیه.');
+                    setAffirmation('خطا در تولید تأییدیه. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingAffirmation(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">تأیید روزانه</h2>
+                    <div className="card p-4 sm:p-6 rounded-xl shadow-md mb-3 sm:mb-4 min-h-[80px] sm:min-h-[100px] flex items-center justify-center">
+                        <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 leading-relaxed">
+                            "{affirmation || "برای دریافت تأییدیه روزانه خود، دکمه زیر را فشار دهید."}"
+                        </p>
+                    </div>
+                    <button onClick={generateAffirmation} disabled={isGeneratingAffirmation} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out transform hover:scale-105 mb-6 sm:mb-8 flex items-center justify-center mx-auto text-sm sm:text-base">
+                        {isGeneratingAffirmation ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-heart ml-2"></i>}
+                        دریافت تأییدیه روزانه ✨
+                    </button>
+                </div>
+            );
+        }
+
+        function GoalSettingScreen({ showSnackbar }) {
+            const [goalInput, setGoalInput] = useState('');
+            const [goalPlan, setGoalPlan] = useState('');
+            const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+
+            const generateGoalPlan = async () => {
+                if (!goalInput.trim()) {
+                    showSnackbar('لطفاً هدف خود را وارد کنید.');
+                    return;
+                }
+                setIsGeneratingPlan(true);
+                setGoalPlan('در حال تولید برنامه...');
+                try {
+                    const prompt = `هدف زیر را به گام‌های عملی و قابل اجرا برای کسی که در حال ترک یک عادت بد و بهبود زندگی است، تقسیم کنید. حداقل ۳ گام ارائه دهید. هدف: "${goalInput}". لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
+                    setGoalPlan(generatedText);
+                    showSnackbar('برنامه با موفقیت تولید شد!');
+                } catch (error) {
+                    showSnackbar(error.message || 'خطا در تولید برنامه.');
+                    setGoalPlan('خطا در تولید برنامه. دوباره تلاش کنید.');
+                } finally {
+                    setIsGeneratingPlan(false);
+                }
+            };
+            return (
+                <div className="text-center p-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-700 dark:text-blue-300 mb-4 sm:mb-6">برنامه‌ریزی هدف</h2>
+                    <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <input type="text" className="flex-grow p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base" placeholder="هدف خود را وارد کنید (مثلاً: چگونه با استرس مقابله کنم؟)" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} onKeyPress={(e) => { if (e.key === 'Enter') generateGoalPlan(); }} />
+                        <button onClick={generateGoalPlan} disabled={isGeneratingPlan || !goalInput.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 flex-shrink-0 text-sm sm:text-base">
+                            {isGeneratingPlan ? <i className="fas fa-spinner fa-spin ml-2"></i> : <i className="fas fa-cogs ml-2"></i>}
+                            تولید برنامه ✨
+                        </button>
+                    </div>
+                    {goalPlan && (
+                        <div className="card p-4 sm:p-6 rounded-xl shadow-md mt-4 sm:mt-6 text-left whitespace-pre-wrap">
+                            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-blue-700 dark:text-blue-300">برنامه‌ی شما:</h3>
+                            <div className="text-gray-800 dark:text-gray-200 text-sm sm:text-base space-y-1">{goalPlan.split('\n').map((plan,i) => <p key={i}>{plan}</p>)}</div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        function App() {
+            const [currentView, setCurrentView] = useState('splash'); 
+            const { snackbarMessage, showSnackbar, show: showAppSnackbar } = useSnackbar();
+            const [isLocked, setIsLocked] = useState(false);
+            const emergencyLockRef = useRef(null); 
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [showRelapseConfirmModal, setShowRelapseConfirmModal] = useState(false);
+            const [userName, setUserName] = useState(localStorage.getItem('safemind_user_name') || null);
+
+
+            const [isDarkMode, setIsDarkMode] = useState(() => {
+                const savedTheme = localStorage.getItem('safemind_theme');
+                if (savedTheme) {
+                    return savedTheme === 'dark';
+                }
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            });
+
+            useEffect(() => {
+                if (isDarkMode) {
+                    document.body.classList.add('dark');
+                } else {
+                    document.body.classList.remove('dark');
+                }
+                localStorage.setItem('safemind_theme', isDarkMode ? 'dark' : 'light');
+            }, [isDarkMode]);
+
+            const toggleTheme = () => {
+                setIsDarkMode(prevMode => !prevMode);
+            };
+
+
+            const handleSplashFinish = () => {
+                if (!userName) {
+                    setCurrentView('userNamePrompt');
+                } else {
+                    setCurrentView('home');
+                }
+            };
+
+            const handleSaveUserName = (name) => {
+                setUserName(name);
+                localStorage.setItem('safemind_user_name', name);
+                setCurrentView('home');
+            };
+
+            const handleRelapseReset = () => {
+                localStorage.removeItem('safemind_clean_days');
+                localStorage.removeItem('safemind_last_check_in_date');
+                localStorage.removeItem('safemind_daily_records');
+                setShowRelapseConfirmModal(false);
+                showAppSnackbar('روزهای پاک بازنشانی شد! لطفاً صفحه را رفرش کنید.');
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 1500);
+            };
+
+
+            const renderScreen = () => {
+                if (currentView === 'splash') {
+                    return <SplashScreen onFinish={handleSplashFinish} />;
+                }
+                if (currentView === 'userNamePrompt') {
+                    return <UserNamePrompt onSaveName={handleSaveUserName} />;
+                }
+
+                switch (currentView) {
+                    case 'home':
+                        return <HomeScreen showSnackbar={showAppSnackbar} userName={userName} />;
+                    case 'messages':
+                        return <MotivationalMessagesScreen showSnackbar={showAppSnackbar} />;
+                    case 'effects': 
+                        return <PositiveEffectsScreen showSnackbar={showAppSnackbar} />;
+                    case 'reasons':
+                        return <ReasonsWallScreen showSnackbar={showAppSnackbar} />;
+                    case 'temptations':
+                        return <TemptationStatsScreen showSnackbar={showAppSnackbar} />;
+                    case 'profile':
+                        return <ProfileScreen showSnackbar={showAppSnackbar} userName={userName} />;
+                    case 'notifications':
+                        return <NotificationSettingsScreen showSnackbar={showAppSnackbar} />;
+                    case 'challenges':
+                        return <ChallengesScreen showSnackbar={showAppSnackbar} />;
+                    case 'emergency':
+                        return <EmergencyLockScreen emergencyLockRefFromApp={emergencyLockRef} showSnackbar={showAppSnackbar} setLockedState={setIsLocked} />;
+                    case 'recommendations':
+                        return <RecommendationsScreen showSnackbar={showAppSnackbar} />;
+                    case 'rewards':
+                        return <RewardsScreen showSnackbar={showAppSnackbar} userName={userName} />;
+                    case 'affirmation':
+                        return <DailyAffirmationScreen showSnackbar={showAppSnackbar} userName={userName} />;
+                    case 'goalplanning':
+                        return <GoalSettingScreen showSnackbar={showAppSnackbar} />;
+                    default:
+                        return <HomeScreen showSnackbar={showAppSnackbar} userName={userName} />;
+                }
+            };
+
+            const handleMenuItemClick = (view) => {
+                setCurrentView(view);
+                setIsSidebarOpen(false);
+            };
+            
+            return (
+                <div className="app-container"> 
+                    {currentView === 'splash' && <SplashScreen onFinish={handleSplashFinish} />}
+                    {currentView === 'userNamePrompt' && <UserNamePrompt onSaveName={handleSaveUserName} />}
+
+                    {currentView !== 'splash' && currentView !== 'userNamePrompt' && (
+                        <>
+                            <div className="app-bar">
+                                <button onClick={() => setIsSidebarOpen(prev => !prev)} className="text-white text-xl sm:text-2xl p-2 rounded-md hover:bg-blue-700 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200">
+                                    <i className="fas fa-bars"></i>
+                                </button>
+                                <h1 className="text-xl sm:text-2xl font-bold">SafeMind</h1>
+                                <button onClick={toggleTheme} className="text-white text-xl sm:text-2xl p-2 rounded-md hover:bg-blue-700 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200">
+                                    <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                                </button>
+                            </div>
+
+                            <div
+                                className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
+                                onClick={() => setIsSidebarOpen(false)}
+                            ></div>
+
+                            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                                <button
+                                    className="sidebar-button flex items-center justify-end text-red-500 hover:text-red-700 !border-b-2 !border-red-200 dark:!border-red-700"
+                                    onClick={() => setIsSidebarOpen(false)}
+                                >
+                                    <i className="fas fa-times ml-2"></i>
+                                    بستن
+                                </button>
+                                <button className={`sidebar-button ${currentView === 'home' ? 'active' : ''}`} onClick={() => handleMenuItemClick('home')}> <i className="fas fa-home"></i> <span>خانه</span> </button>
+                                <button className={`sidebar-button ${currentView === 'profile' ? 'active' : ''}`} onClick={() => handleMenuItemClick('profile')}> <i className="fas fa-user-circle"></i> <span>پروفایل و تاریخچه</span> </button>
+                                <button className={`sidebar-button ${currentView === 'messages' ? 'active' : ''}`} onClick={() => handleMenuItemClick('messages')}> <i className="fas fa-quote-right"></i> <span>پیام‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'effects' ? 'active' : ''}`} onClick={() => handleMenuItemClick('effects')}> <i className="fas fa-spa"></i> <span>اثرات مثبت</span> </button>
+                                <button className={`sidebar-button ${currentView === 'reasons' ? 'active' : ''}`} onClick={() => handleMenuItemClick('reasons')}> <i className="fas fa-lightbulb"></i> <span>دلایل</span> </button>
+                                <button className={`sidebar-button ${currentView === 'temptations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('temptations')}> <i className="fas fa-chart-line"></i> <span>وسوسه‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'rewards' ? 'active' : ''}`} onClick={() => handleMenuItemClick('rewards')}> <i className="fas fa-trophy"></i> <span>پاداش‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'affirmation' ? 'active' : ''}`} onClick={() => handleMenuItemClick('affirmation')}> <i className="fas fa-heart"></i> <span>تأییدیه</span> </button>
+                                <button className={`sidebar-button ${currentView === 'goalplanning' ? 'active' : ''}`} onClick={() => handleMenuItemClick('goalplanning')}> <i className="fas fa-clipboard-list"></i> <span>برنامه‌ریزی هدف</span> </button>
+                                <button className={`sidebar-button ${currentView === 'challenges' ? 'active' : ''}`} onClick={() => handleMenuItemClick('challenges')}> <i className="fas fa-dumbbell"></i> <span>چالش‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'recommendations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('recommendations')}> <i className="fas fa-star"></i> <span>توصیه‌ها</span> </button>
+                                <button className={`sidebar-button ${currentView === 'emergency' ? 'active' : ''}`} onClick={() => handleMenuItemClick('emergency')}> <i className="fas fa-lock"></i> <span>قفل اضطراری</span> </button>
+                                <button className={`sidebar-button ${currentView === 'notifications' ? 'active' : ''}`} onClick={() => handleMenuItemClick('notifications')}> <i className="fas fa-bell"></i> <span>نوتیفیکیشن‌ها</span> </button>
+                                <button className="sidebar-button" onClick={() => { setIsSidebarOpen(false); setShowRelapseConfirmModal(true); }}> <i className="fas fa-redo-alt"></i> <span>بازنشانی روزهای پاک</span> </button>
+                            </div>
+
+                            <div className="content-area">
+                                {renderScreen()}
+                            </div>
+
+                            <Snackbar message={snackbarMessage} show={showSnackbar} />
+
+                            {isLocked && emergencyLockRef.current && (
+                                <div className="lock-overlay">
+                                    <h2 className="text-3xl sm:text-5xl font-extrabold text-red-500 mb-6 sm:mb-8">
+                                        <i className="fas fa-exclamation-triangle mr-2 sm:mr-4"></i>
+                                        قفل اضطراری فعال است!
+                                    </h2>
+                                    <p className="text-6xl sm:text-8xl font-bold text-white mb-6 sm:mb-8">
+                                        {formatTime(emergencyLockRef.current.lockTimer)}
+                                    </p>
+                                    <div className="w-full max-w-sm sm:max-w-lg card bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg mb-6 sm:mb-8">
+                                        <p className="text-lg sm:text-2xl font-semibold text-white leading-relaxed">
+                                            "{emergencyLockRef.current.deterrentMessage || 'لطفاً مقاومت کنید. این لحظه می‌گذرد!'}"
+                                        </p>
+                                        {emergencyLockRef.current.isGeneratingMessage && (
+                                            <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-300">
+                                                <i className="fas fa-spinner fa-spin ml-2"></i> در حال دریافت پیام بازدارنده...
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => emergencyLockRef.current.cancelLock()}
+                                        className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 text-base sm:text-lg"
+                                    >
+                                        <i className="fas fa-unlock ml-2"></i>
+                                        لغو قفل
+                                    </button>
+                                </div>
+                            )}
+
+                            {showRelapseConfirmModal && (
+                                <RelapseConfirmationModal
+                                    onConfirm={handleRelapseReset}
+                                    onCancel={() => setShowRelapseConfirmModal(false)}
+                                />
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+
+</body>
+</html>
