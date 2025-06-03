@@ -301,7 +301,7 @@
 
         // کلید OpenAI API شما (به صورت مستقیم در فرانت‌اند)
         // این کلید برای اهداف آزمایشی اینجا قرار داده شده است.
-        const OPENAI_API_KEY = "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"; 
+        const OPENAI_API_KEY = "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"; 
 
         /**
          * Asynchronously generates text by calling OpenAI API directly from the frontend.
@@ -1222,7 +1222,7 @@
                     showSnackbar('چالش با موفقیت تولید شد!');
                 } catch (error) {
                     showSnackbar(error.message || 'خطا در تولید چالش.');
-                    setChallenge('خطا در تولید چالش. دوباره تلاش کنید.');
+                    setChallenge('خطا در تولید چallenge. دوباره تلاش کنید.');
                 } finally {
                     setIsGeneratingChallenge(false);
                 }
