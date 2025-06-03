@@ -294,24 +294,10 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- START OF AI API INTEGRATION (Direct Frontend Call - NOT RECOMMENDED FOR PRODUCTION) ---
-        // !!! هشدار امنیتی: این روش برای اهداف آموزشی یا توسعه سریع مناسب است، اما برای برنامه‌های عمومی و عملیاتی به شدت ناامن است.
-        // !!! کلید API شما مستقیماً در کد فرانت‌اند قرار می‌گیرد و برای هر کسی قابل مشاهده و سوءاستفاده است.
-        // !!! برای امنیت بیشتر، همیشه از یک بک‌اند پراکسی (مانند Serverless Function در Vercel) استفاده کنید.
+        const GROQ_API_KEY = "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"; 
 
-        // کلید OpenAI API شما (به صورت مستقیم در فرانت‌اند)
-        // این کلید برای اهداف آزمایشی اینجا قرار داده شده است.
-        const OPENAI_API_KEY = "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"; 
-
-        /**
-         * Asynchronously generates text by calling OpenAI API directly from the frontend.
-         * @param {string} promptText - The prompt to send to OpenAI.
-         * @param {string} [model="gpt-3.5-turbo"] - The OpenAI model identifier.
-         * @returns {Promise<string>} The generated text.
-         * @throws {Error} If there's an issue with the API call.
-         */
-        async function generateTextWithAI(promptText, model = "gpt-3.5-turbo") {
-            const openaiApiUrl = `https://api.openai.com/v1/chat/completions`;
+        async function generateTextWithAI(promptText, model = "llama3-8b-8192") { 
+            const groqApiUrl = `https://api.groq.com/openai/v1/chat/completions`;
 
             const payload = {
                 model: model,
@@ -330,22 +316,22 @@
             };
 
             try {
-                const response = await fetch(openaiApiUrl, { 
+                const response = await fetch(groqApiUrl, { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}` // استفاده مستقیم از کلید API
+                        'Authorization': `Bearer ${GROQ_API_KEY}` 
                     },
                     body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ message: `خطا در پاسخ API: ${response.statusText}` }));
-                    console.error("OpenAI API Error HTTP Status:", response.status, errorData);
+                    console.error("Groq API Error HTTP Status:", response.status, errorData);
                     let userFriendlyError = "متاسفانه در ارتباط با سرویس هوش مصنوعی مشکلی پیش آمده. لطفاً بعداً دوباره تلاش کنید.";
-                    if (response.status === 401 || response.status === 403) { // Unauthorized / Forbidden
-                        userFriendlyError = "مشکل در احراز هویت سرویس هوش مصنوعی. لطفاً کلید API را بررسی کنید.";
-                    } else if (response.status === 429) { // Too Many Requests
+                    if (response.status === 401 || response.status === 403) { 
+                        userFriendlyError = "مشکل در احراز هویت سرویس هوش مصنوعی Groq. لطفاً کلید API را بررسی کنید.";
+                    } else if (response.status === 429) { 
                         userFriendlyError = "تعداد درخواست‌های شما از حد مجاز فراتر رفته است. لطفاً کمی صبر کنید و دوباره تلاش نمایید.";
                     } else if (errorData.error && typeof errorData.error === 'string' && errorData.error.toLowerCase().includes('quota')) {
                         userFriendlyError = "سهمیه استفاده شما از این سرویس به پایان رسیده است.";
@@ -359,18 +345,17 @@
                     result.choices[0].message && result.choices[0].message.content) {
                     return result.choices[0].message.content.trim();
                 } else {
-                    console.error("OpenAI API Error: Invalid response structure", result);
-                    throw new Error(result.error || 'پاسخ نامعتبر از OpenAI API دریافت شد.');
+                    console.error("Groq API Error: Invalid response structure", result);
+                    throw new Error(result.error || 'پاسخ نامعتبر از Groq API دریافت شد.');
                 }
             } catch (error) {
-                console.error("Error calling OpenAI API directly:", error);
+                console.error("Error calling Groq API directly:", error);
                  if (error.message && (error.message.toLowerCase().includes("failed to fetch") || error.message.toLowerCase().includes("networkerror"))) {
-                     throw new Error("خطا در برقراری ارتباط با OpenAI. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.");
+                     throw new Error("خطا در برقراری ارتباط با Groq. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.");
                 }
                 throw error; 
             }
         }
-        // --- END OF AI API INTEGRATION (Direct Frontend Call) ---
 
 
         const formatDate = (date) => {
@@ -716,7 +701,7 @@
                 setDailyMessage('در حال تولید پیام جدید...');
                 try {
                     const prompt = "یک پیام انگیزشی کوتاه، امیدبخش و مثبت برای کسی که در حال ترک یک عادت بد است، بنویسید. پیام باید انرژی‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید."; 
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo"); // استفاده از مدل OpenAI
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
                     setDailyMessage(generatedText);
                     showSnackbar('پیام جدید با موفقیت تولید شد!');
                 } catch (error) {
@@ -820,7 +805,7 @@
                     const randomIndex = Math.floor(Math.random() * effects.length);
                     setDailyEffect(effects[randomIndex]);
                     setLastEffectDate(today);
-                    localStorage.setItem('safemind_last_effect_date', today.toISOString()); // کلید صحیح
+                    localStorage.setItem('safemind_last_effect_date', today.toISOString()); 
                     setExpandedEffectExplanation(''); 
                 } else if (effects.length === 0) {
                     setDailyEffect('اثری برای نمایش وجود ندارد. یکی اضافه کنید!');
@@ -851,7 +836,7 @@
                 setExpandedEffectExplanation('در حال دریافت توضیح...');
                 try {
                     const prompt = `توضیح دهید که چگونه ترک یک عادت بد منجر به اثر مثبت زیر می‌شود: "${dailyEffect}". در یک پاراگراف کوتاه و مفید توضیح دهید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`; 
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo"); // استفاده از مدل OpenAI
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
                     setExpandedEffectExplanation(generatedText);
                     showSnackbar('توضیح با موفقیت دریافت شد!');
                 } catch (error) {
@@ -952,7 +937,7 @@
                 setGeneratedReason('در حال تولید دلیل جدید...');
                 try {
                     const prompt = "یک دلیل قوی و انگیزشی برای ترک یک عادت بد بنویسید. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
-                    const newGeneratedReasonText = await generateTextWithAI(prompt, "gpt-3.5-turbo"); 
+                    const newGeneratedReasonText = await generateTextWithAI(prompt, "llama3-8b-8192"); 
                     setGeneratedReason(newGeneratedReasonText);
                     showSnackbar('دلیل جدید با موفقیت تولید شد!');
                 } catch (error) {
@@ -1034,7 +1019,7 @@
                 try {
                     const temptationList = temptations.map(t => `${formatDate(t.date)}: ${t.description}`).join('\n');
                     const prompt = `با توجه به لیست وسوسه‌های زیر، الگوها را تحلیل کرده و سه استراتژی مقابله‌ای مؤثر و عملی پیشنهاد دهید. وسوسه‌ها: \n${temptationList}\n لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setAnalysisResult(generatedText);
                     showSnackbar('تحلیل با موفقیت انجام شد!');
                 } catch (error) {
@@ -1107,7 +1092,7 @@
                 setProgressReport('در حال تولید گزارش پیشرفت...');
                 try {
                     const prompt = `یک گزارش پیشرفت شخصی‌سازی‌شده و انگیزشی برای کاربری به نام ${userName || 'کاربر'} که ${cleanDays} روز است یک عادت بد را ترک کرده است. تاریخ شروع ترک او ${startDate ? formatDate(startDate) : 'مشخص نیست'} است. او تا کنون ${temptations.length} بار وسوسه را ثبت کرده است. گزارش باید شامل تمجید از پیشرفت، بینش‌های کلی و توصیه‌هایی برای آینده باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setProgressReport(generatedText);
                     showSnackbar('گزارش با موفقیت تولید شد!');
                 } catch (error) {
@@ -1217,12 +1202,12 @@
                 setChallenge('در حال تولید چالش جدید...');
                 try {
                     const prompt = "یک چالش عملی و کوچک روزانه برای کسی که در حال ترک یک عادت بد است و می‌خواهد خود را تقویت کند، ارائه دهید. چالش باید کوتاه، قابل اجرا، و خلاقانه باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setChallenge(generatedText);
                     showSnackbar('چالش با موفقیت تولید شد!');
                 } catch (error) {
                     showSnackbar(error.message || 'خطا در تولید چالش.');
-                    setChallenge('خطا در تولید چallenge. دوباره تلاش کنید.');
+                    setChallenge('خطا در تولید چالش. دوباره تلاش کنید.');
                 } finally {
                     setIsGeneratingChallenge(false);
                 }
@@ -1276,7 +1261,7 @@
                 setLockedState(true);
                 try {
                     const prompt = "یک پیام بازدارنده بسیار قوی و مؤثر برای کسی که در لحظه بحران و وسوسه شدید برای بازگشت به عادت بد است، بنویسید. پیام باید بر احساس آزادی، آینده، سلامتی، و از دست دادن پیشرفت تمرکز کند و بسیار قانع کننده باشد. زبان فارسی و لحن جدی و حمایتی باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setDeterrentMessage(generatedText);
                 } catch (error) {
                     setDeterrentMessage('خطا در تولید پیام. مقاومت کن! به یاد بیاور چرا شروع کردی.');
@@ -1334,7 +1319,7 @@
                 setRecommendations('در حال تولید توصیه‌ها...');
                 try {
                     const prompt = "ارائه دهنده ۵ توصیه‌ی عملی و انگیزشی برای کسی که در حال ترک یک عادت بد است و می‌خواهد انگیزه‌ی خود را حفظ کند و زندگی سالمی داشته باشد. توصیه‌ها باید کوتاه، قابل اجرا و به صورت لیست شماره‌دار باشند. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.";
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setRecommendations(generatedText);
                     showSnackbar('توصیه‌ها با موفقیت دریافت شد!');
                 } catch (error) {
@@ -1376,7 +1361,7 @@
                 setRewardMessage('در حال تولید پیام پاداش...');
                 try {
                     const prompt = `یک پیام تبریک و پاداش شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForReward} روز است که یک عادت بد را ترک کرده، بنویسید. پیام باید بسیار انگیزشی، دلگرم‌کننده و با تمرکز بر دستاورد او باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setRewardMessage(generatedText);
                     showSnackbar('پیام پاداش با موفقیت تولید شد!');
                 } catch (error) {
@@ -1419,7 +1404,7 @@
                 setAffirmation('در حال تولید تأییدیه...');
                 try {
                     const prompt = `یک تأییدیه (affirmation) مثبت و شخصی‌سازی‌شده برای ${userName || 'کاربر'} که ${cleanDaysForAffirmation} روز است که یک عادت بد را ترک کرده، بنویسید. تأییدیه باید کوتاه، قدرتمند و الهام‌بخش باشد. لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setAffirmation(generatedText);
                     showSnackbar('تأییدیه با موفقیت تولید شد!');
                 } catch (error) {
@@ -1459,7 +1444,7 @@
                 setGoalPlan('در حال تولید برنامه...');
                 try {
                     const prompt = `هدف زیر را به گام‌های عملی و قابل اجرا برای کسی که در حال ترک یک عادت بد و بهبود زندگی است، تقسیم کنید. حداقل ۳ گام ارائه دهید. هدف: "${goalInput}". لطفاً پاسخ را فقط به زبان فارسی ارائه دهید.`;
-                    const generatedText = await generateTextWithAI(prompt, "gpt-3.5-turbo");
+                    const generatedText = await generateTextWithAI(prompt, "llama3-8b-8192");
                     setGoalPlan(generatedText);
                     showSnackbar('برنامه با موفقیت تولید شد!');
                 } catch (error) {
