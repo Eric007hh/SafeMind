@@ -294,69 +294,83 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- START OF AI API INTEGRATION (via Backend Proxy - Secure Method) ---
-        // در این نسخه، هیچ کلید API مستقیماً در کد فرانت‌اند وجود ندارد.
-        // تمام فراخوانی‌های هوش مصنوعی باید از طریق یک بک‌اند پراکسی (Serverless Function) انجام شود.
+        // --- START OF AI API INTEGRATION (Direct Frontend Call - NOT RECOMMENDED FOR PRODUCTION) ---
+        // !!! هشدار امنیتی: این روش برای اهداف آموزشی یا توسعه سریع مناسب است، اما برای برنامه‌های عمومی و عملیاتی به شدت ناامن است.
+        // !!! کلید API شما مستقیماً در کد فرانت‌اند قرار می‌گیرد و برای هر کسی قابل مشاهده و سوءاستفاده است.
+        // !!! برای امنیت بیشتر، همیشه از یک بک‌اند پراکسی (مانند Serverless Function در Vercel) استفاده کنید.
+
+        // کلید OpenAI API شما (به صورت مستقیم در فرانت‌اند)
+        // این کلید برای اهداف آزمایشی اینجا قرار داده شده است.
+        const OPENAI_API_KEY = "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"; 
 
         /**
-         * Asynchronously generates text by calling your backend proxy.
-         * The backend proxy will then securely call the AI API (e.g., OpenAI).
-         * @param {string} promptText - The prompt to send to the backend.
-         * @param {string} [model="gpt-3.5-turbo"] - An optional model identifier to suggest to the backend.
+         * Asynchronously generates text by calling OpenAI API directly from the frontend.
+         * @param {string} promptText - The prompt to send to OpenAI.
+         * @param {string} [model="gpt-3.5-turbo"] - The OpenAI model identifier.
          * @returns {Promise<string>} The generated text.
-         * @throws {Error} If there's an issue with the backend call or AI API response.
+         * @throws {Error} If there's an issue with the API call.
          */
-        async function generateTextWithAI(promptText, model = "gpt-3.5-turbo") { // مدل پیش‌فرض به OpenAI تغییر کرد
-            // این آدرس باید به Serverless Function شما روی Vercel اشاره کند.
-            // اگر فایل بک‌اند شما api/generateText.js نام دارد، این آدرس صحیح است.
-            const backendApiUrl = "/api/generateText"; 
+        async function generateTextWithAI(promptText, model = "gpt-3.5-turbo") {
+            const openaiApiUrl = `https://api.openai.com/v1/chat/completions`;
 
             const payload = {
-                promptText: promptText, 
-                model: model 
+                model: model,
+                messages: [
+                    { 
+                        role: "system", 
+                        content: "شما یک دستیار هوش مصنوعی مفید و سازنده هستید که فقط و فقط به زبان فارسی روان و معیار پاسخ می‌دهد. لطفاً از کلمات انگلیسی استفاده نکنید، مگر اینکه خود کلمه (مثلاً یک نام خاص) اصالتاً انگلیسی باشد و معادل فارسی رایجی نداشته باشد. در تمام موارد دیگر، پاسخ باید ۱۰۰٪ فارسی باشد. پاسخ‌های شما باید مستقیماً به پرسش کاربر باشد و بدون اضافه کردن جملات مقدماتی یا پایانی غیرضروری باشد."
+                    },
+                    { 
+                        role: "user", 
+                        content: promptText
+                    }
+                ],
+                temperature: 0.7, 
+                max_tokens: 500,  
             };
 
             try {
-                const response = await fetch(backendApiUrl, { 
+                const response = await fetch(openaiApiUrl, { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}` // استفاده مستقیم از کلید API
                     },
                     body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: `خطا در پاسخ بک‌اند: ${response.statusText}` }));
-                    console.error("Backend API Error HTTP Status:", response.status, errorData);
-                    // نمایش پیام خطای عمومی‌تر به کاربر
+                    const errorData = await response.json().catch(() => ({ message: `خطا در پاسخ API: ${response.statusText}` }));
+                    console.error("OpenAI API Error HTTP Status:", response.status, errorData);
                     let userFriendlyError = "متاسفانه در ارتباط با سرویس هوش مصنوعی مشکلی پیش آمده. لطفاً بعداً دوباره تلاش کنید.";
-                    if (response.status === 429) { // Too Many Requests
+                    if (response.status === 401 || response.status === 403) { // Unauthorized / Forbidden
+                        userFriendlyError = "مشکل در احراز هویت سرویس هوش مصنوعی. لطفاً کلید API را بررسی کنید.";
+                    } else if (response.status === 429) { // Too Many Requests
                         userFriendlyError = "تعداد درخواست‌های شما از حد مجاز فراتر رفته است. لطفاً کمی صبر کنید و دوباره تلاش نمایید.";
                     } else if (errorData.error && typeof errorData.error === 'string' && errorData.error.toLowerCase().includes('quota')) {
                         userFriendlyError = "سهمیه استفاده شما از این سرویس به پایان رسیده است.";
-                    } else if (errorData.error && typeof errorData.error === 'string' && errorData.error.toLowerCase().includes('api key')) {
-                        userFriendlyError = "مشکل در احراز هویت سرویس هوش مصنوعی. لطفاً با توسعه‌دهنده تماس بگیرید."; // پیام جدید برای خطای کلید API
                     }
                     throw new Error(userFriendlyError);
                 }
 
                 const result = await response.json();
 
-                if (result.generated_text) { 
-                    return result.generated_text.trim();
+                if (result.choices && result.choices.length > 0 &&
+                    result.choices[0].message && result.choices[0].message.content) {
+                    return result.choices[0].message.content.trim();
                 } else {
-                    console.error("Backend API Error: Invalid response structure from backend", result);
-                    throw new Error(result.error || 'پاسخ نامعتبر از بک‌اند دریافت شد.');
+                    console.error("OpenAI API Error: Invalid response structure", result);
+                    throw new Error(result.error || 'پاسخ نامعتبر از OpenAI API دریافت شد.');
                 }
             } catch (error) {
-                console.error("Error calling Backend API:", error);
+                console.error("Error calling OpenAI API directly:", error);
                  if (error.message && (error.message.toLowerCase().includes("failed to fetch") || error.message.toLowerCase().includes("networkerror"))) {
-                     throw new Error("خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.");
+                     throw new Error("خطا در برقراری ارتباط با OpenAI. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.");
                 }
                 throw error; 
             }
         }
-        // --- END OF AI API INTEGRATION (via Backend Proxy) ---
+        // --- END OF AI API INTEGRATION (Direct Frontend Call) ---
 
 
         const formatDate = (date) => {
@@ -976,7 +990,12 @@
                         {reasons.map((reason, index) => (
                             <li key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
                                 <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{reason}</span>
-                                <button onClick={() => handleDeleteReason(index)} className="text-red-500 hover:text-red-700 transition duration-200 p-1"><i className="fas fa-trash-alt text-sm sm:text-base"></i></button>
+                                <button
+                                    onClick={() => handleDeleteReason(index)}
+                                    className="text-red-500 hover:text-red-700 transition duration-200 p-1"
+                                >
+                                    <i className="fas fa-trash-alt text-sm sm:text-base"></i>
+                                </button>
                             </li>
                         ))}
                     </ul>
@@ -1040,7 +1059,12 @@
                         {temptations.map((temp) => (
                             <li key={temp.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-md shadow-sm">
                                 <span className="text-gray-800 dark:text-gray-200 text-xs sm:text-base">{temp.description} ({formatDate(temp.date)})</span>
-                                <button onClick={() => handleDeleteTemptation(temp.id)} className="text-red-500 hover:text-red-700 transition duration-200 p-1"><i className="fas fa-trash-alt text-sm sm:text-base"></i></button>
+                                <button
+                                    onClick={() => handleDeleteTemptation(temp.id)}
+                                    className="text-red-500 hover:text-red-700 transition duration-200 p-1"
+                                >
+                                    <i className="fas fa-trash-alt text-sm sm:text-base"></i>
+                                </button>
                             </li>
                         ))}
                     </ul>
@@ -1610,7 +1634,6 @@
                                 <button className={`sidebar-button ${currentView === 'challenges' ? 'active' : ''}`} onClick={() => handleMenuItemClick('challenges')}> <i className="fas fa-dumbbell"></i> <span>چالش‌ها</span> </button>
                                 <button className={`sidebar-button ${currentView === 'recommendations' ? 'active' : ''}`} onClick={() => handleMenuItemClick('recommendations')}> <i className="fas fa-star"></i> <span>توصیه‌ها</span> </button>
                                 <button className={`sidebar-button ${currentView === 'emergency' ? 'active' : ''}`} onClick={() => handleMenuItemClick('emergency')}> <i className="fas fa-lock"></i> <span>قفل اضطراری</span> </button>
-                                <button className={`sidebar-button ${currentView === 'notifications' ? 'active' : ''}`} onClick={() => handleMenuItemClick('notifications')}> <i className="fas fa-bell"></i> <span>نوتیفیکیشن‌ها</span> </button>
                                 <button className="sidebar-button" onClick={() => { setIsSidebarOpen(false); setShowRelapseConfirmModal(true); }}> <i className="fas fa-redo-alt"></i> <span>بازنشانی روزهای پاک</span> </button>
                             </div>
 
