@@ -1,0 +1,77 @@
+// api/generateWithHuggingFace.js
+
+export default async function handler(req, res) {
+    // فقط درخواست‌های POST رو قبول می‌کنیم
+    if (req.method !== 'POST') {
+        res.setHeader('Allow', ['POST']);
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
+    }
+
+    try {
+        const { promptText, modelId } = req.body; // prompt و modelId رو از بدنه درخواست فرانت‌اند می‌خونیم
+
+        if (!promptText) {
+            return res.status(400).json({ error: "متن prompt ارسال نشده است." });
+        }
+
+        const HUGGINGFACE_TOKEN = process.env.HUGGINGFACE_TOKEN_SECURE; //  توکن رو از متغیرهای محیطی Vercel می‌خونیم
+        const HUGGINGFACE_DEFAULT_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.1"; // یا هر مدل دیگه‌ای
+
+        const effectiveModelId = modelId || HUGGINGFACE_DEFAULT_MODEL_ID;
+        const apiUrl = `https://api-inference.huggingface.co/models/${effectiveModelId}`;
+
+        const fullPrompt = `${promptText} لطفاً پاسخ را فقط به زبان فارسی روان و معیار ارائه دهید و از کلمات انگلیسی استفاده نکنید، مگر اینکه خود کلمه (مثلاً یک نام خاص) اصالتاً انگلیسی باشد و معادل فارسی رایجی نداشته باشد.`;
+
+        const payload = {
+            inputs: fullPrompt,
+            parameters: {
+                return_full_text: false,
+                max_new_tokens: 250,
+                temperature: 0.7,
+            }
+        };
+
+        const hfResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${HUGGINGFACE_TOKEN}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!hfResponse.ok) {
+            const errorText = await hfResponse.text();
+            console.error("Hugging Face API Error from Backend:", hfResponse.status, errorText);
+            // سعی می‌کنیم پیام خطای بهتری به فرانت‌اند بفرستیم
+            let errorMessageDetail = hfResponse.statusText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) {
+                    errorMessageDetail = errorJson.error;
+                }
+            } catch (e) { /* چیزی برای انجام دادن نیست، از متن خطا استفاده می‌کنیم */ }
+
+            return res.status(hfResponse.status).json({ error: `خطا در ارتباط با Hugging Face API: ${errorMessageDetail}` });
+        }
+
+        const result = await hfResponse.json();
+        let generatedText = '';
+
+        if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
+            generatedText = result[0].generated_text.trim();
+        } else if (result.generated_text) {
+            generatedText = result.generated_text.trim();
+        } else {
+            console.error("Hugging Face API Error from Backend: Invalid response structure", result);
+            return res.status(500).json({ error: 'پاسخ نامعتبر از Hugging Face API دریافت شد.' });
+        }
+
+        // پاسخ موفقیت‌آمیز رو به فرانت‌اند برمی‌گردونیم
+        res.status(200).json({ generated_text: generatedText });
+
+    } catch (error) {
+        console.error("Error in Serverless Function:", error);
+        res.status(500).json({ error: error.message || 'خطای داخلی سرور در تابع بدون سرور.' });
+    }
+}
